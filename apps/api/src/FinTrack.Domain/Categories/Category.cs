@@ -1,6 +1,6 @@
 namespace FinTrack.Domain.Categories;
 
-public class Category
+public sealed class Category
 {
   private Category(){}
 
@@ -19,6 +19,6 @@ public class Category
   }
 
   public Guid Id { get; private set; }
-  
+
   public string Name { get; private set; } = string.Empty;
 }

@@ -1,6 +1,6 @@
 namespace FinTrack.Domain.Accounts;
 
-public class Account
+public sealed class Account
 {
   private Account(){}
 
