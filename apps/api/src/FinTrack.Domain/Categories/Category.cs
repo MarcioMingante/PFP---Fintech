@@ -1,27 +1,24 @@
-namespace FinTrack.Domain.Accounts;
+namespace FinTrack.Domain.Categories;
 
-public class Account
+public class Category
 {
-  private Account()
-  {
-    
-  }
+  private Category(){}
 
-  public Account(string name)
+  public Category(string name)
   {
     if (string.IsNullOrWhiteSpace(name))
     {
       throw new ArgumentException(
-        "Nome da conta não pode ser vazio.",
+        "Nome da categoria não pode ser vazio.",
         nameof(name)
       );
     }
 
     Id = Guid.NewGuid();
-    Name = name;
+    Name = name.Trim();
   }
 
   public Guid Id { get; private set; }
-
+  
   public string Name { get; private set; } = string.Empty;
 }
