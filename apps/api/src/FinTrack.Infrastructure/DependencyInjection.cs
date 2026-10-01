@@ -2,6 +2,8 @@ using FinTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using FinTrack.Application.Accounts;
+using FinTrack.Infrastructure.Persistence.Repositories;
 
 namespace FinTrack.Infrastructure;
 
@@ -17,6 +19,8 @@ public static class DependencyInjection
     
     services.AddDbContext<FinTrackDbContext>(options =>
       options.UseNpgsql(connectionString));
+
+    services.AddScoped<IAccountRepository, AccountRepository>();
 
     return services;
   }
