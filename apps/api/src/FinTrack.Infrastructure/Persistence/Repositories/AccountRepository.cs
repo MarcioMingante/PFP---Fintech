@@ -1,5 +1,6 @@
 using FinTrack.Application.Accounts;
 using FinTrack.Domain.Accounts;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinTrack.Infrastructure.Persistence.Repositories;
 
@@ -13,5 +14,15 @@ public sealed class AccountRepository(FinTrackDbContext dbContext) : IAccountRep
     dbContext.Accounts.Add(account);
 
     await dbContext.SaveChangesAsync(cancellationToken); 
+  }
+
+  public async Task<IReadOnlyList<Account>> ListAsync(
+    CancellationToken cancellationToken = default
+  )
+  {
+    return await dbContext.Accounts
+      .AsNoTracking()
+      .OrderBy(account => account.Name)
+      .ToListAsync(cancellationToken);
   }
 }

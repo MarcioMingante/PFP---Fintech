@@ -8,4 +8,8 @@ public interface IAccountRepository
     Account account,
     CancellationToken cancellationToken = default
   );
+
+  Task<IReadOnlyList<Account>> ListAsync(
+    CancellationToken cancellationToken = default
+  );
 }

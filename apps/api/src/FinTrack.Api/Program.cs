@@ -1,11 +1,13 @@
 using FinTrack.Infrastructure;
 using FinTrack.Application.Accounts.Commands.CreateAccount;
 using FinTrack.Api.Contracts.Accounts;
+using FinTrack.Application.Accounts.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<CreateAccountHandler>();
+builder.Services.AddScoped<CreateAccountCommandValidator>();
 
 var app = builder.Build();
 
@@ -18,11 +20,18 @@ app.MapPost(
     "/accounts",
     async (
         CreateAccountRequest request,
+        CreateAccountCommandValidator validator,
         CreateAccountHandler handler,
         CancellationToken cancellationToken
     ) =>
     {
         var command = new CreateAccountCommand(request.Name);
+        var errors = validator.Validate(command);
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
 
         var account = await handler.HandleAsync(command, cancellationToken);
 

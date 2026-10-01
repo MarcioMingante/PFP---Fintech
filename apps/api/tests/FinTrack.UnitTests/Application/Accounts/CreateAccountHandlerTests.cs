@@ -37,5 +37,12 @@ public sealed class CreateAccountHandlerTests
 
             return Task.CompletedTask;
         }
+
+        public Task<IReadOnlyList<Account>> ListAsync(
+            CancellationToken cancellationToken = default
+        )
+        {
+            return Task.FromResult<IReadOnlyList<Account>>([]);
+        }
     }
 }
