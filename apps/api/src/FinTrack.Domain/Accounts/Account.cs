@@ -21,4 +21,17 @@ public sealed class Account
   public Guid Id { get; private set; }
 
   public string Name { get; private set; } = string.Empty;
+
+  public void Rename(string name)
+{
+    if (string.IsNullOrWhiteSpace(name))
+    {
+        throw new ArgumentException(
+            "Nome da conta não pode ser vazio.",
+            nameof(name)
+        );
+    }
+
+    Name = name.Trim();
+}
 }

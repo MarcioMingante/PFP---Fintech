@@ -3,6 +3,7 @@ using FinTrack.Application.Accounts.Commands.CreateAccount;
 using FinTrack.Api.Contracts.Accounts;
 using FinTrack.Application.Accounts.Validators;
 using FinTrack.Application.Accounts.Queries.ListAccounts;
+using FinTrack.Application.Accounts.Queries.GetAccount;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<CreateAccountHandler>();
 builder.Services.AddScoped<CreateAccountCommandValidator>();
 builder.Services.AddScoped<ListAccountsHandler>();
+builder.Services.AddScoped<GetAccountHandler>();
+
 var app = builder.Build();
 
 app.MapGet("/health", () => Results.Ok(new
@@ -52,6 +55,30 @@ app.MapGet(
         var accounts = await handler.HandleAsync(query, cancellationToken);
 
         return Results.Ok(accounts);
+    }
+);
+
+app.MapGet(
+    "/accounts/{id:guid}",
+    async (
+        Guid id,
+        GetAccountHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var query = new GetAccountQuery(id);
+
+        var account = await handler.HandleAsync(
+            query,
+            cancellationToken
+        );
+
+        if (account is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(account);
     }
 );
 
