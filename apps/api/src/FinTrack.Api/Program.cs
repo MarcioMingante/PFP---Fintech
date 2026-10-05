@@ -4,6 +4,7 @@ using FinTrack.Api.Contracts.Accounts;
 using FinTrack.Application.Accounts.Validators;
 using FinTrack.Application.Accounts.Queries.ListAccounts;
 using FinTrack.Application.Accounts.Queries.GetAccount;
+using FinTrack.Application.Accounts.Commands.UpdateAccount;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,8 @@ builder.Services.AddScoped<CreateAccountHandler>();
 builder.Services.AddScoped<CreateAccountCommandValidator>();
 builder.Services.AddScoped<ListAccountsHandler>();
 builder.Services.AddScoped<GetAccountHandler>();
+builder.Services.AddScoped<UpdateAccountHandler>();
+builder.Services.AddScoped<UpdateAccountCommandValidator>();
 
 var app = builder.Build();
 
@@ -70,6 +73,39 @@ app.MapGet(
 
         var account = await handler.HandleAsync(
             query,
+            cancellationToken
+        );
+
+        if (account is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(account);
+    }
+);
+
+app.MapPut(
+    "/accounts/{id:guid}",
+    async (
+        Guid id,
+        UpdateAccountRequest request,
+        UpdateAccountCommandValidator validator,
+        UpdateAccountHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var command = new UpdateAccountCommand(
+            id,
+            request.Name
+        );
+
+        var errors = validator.Validate(command);
+
+        if (errors.Count > 0) return Results.ValidationProblem(errors);
+
+        var account = await handler.HandleAsync(
+            command,
             cancellationToken
         );
 

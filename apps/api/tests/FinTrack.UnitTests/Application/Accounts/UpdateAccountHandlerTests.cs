@@ -73,4 +73,24 @@ public sealed class UpdateAccountHandlerTests
             return Task.CompletedTask;
         }
     }
+
+    [Fact]
+    public async Task Handle_WithUnknownId_ReturnsNullWithoutUpdating()
+    {
+        // Arrange
+        var repository = new FakeAccountRepository(null);
+        var handler = new UpdateAccountHandler(repository);
+
+        var command = new UpdateAccountCommand(
+            Guid.NewGuid(),
+            "Conta nova"
+        );
+
+        // Act
+        var result = await handler.HandleAsync(command);
+
+        // Assert
+        Assert.Null(result);
+        Assert.Null(repository.UpdatedAccount);
+    }
 }
