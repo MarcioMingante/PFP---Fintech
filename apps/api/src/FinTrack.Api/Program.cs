@@ -104,7 +104,10 @@ app.MapPut(
 
         var errors = validator.Validate(command);
 
-        if (errors.Count > 0) return Results.ValidationProblem(errors);
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
 
         var account = await handler.HandleAsync(
             command,
@@ -121,7 +124,7 @@ app.MapPut(
 );
 
 app.MapDelete(
-    "accounts/{id:guid}",
+    "/accounts/{id:guid}",
     async (
         Guid id,
         DeleteAccountHandler handler,

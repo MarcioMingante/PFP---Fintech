@@ -13,7 +13,7 @@ public sealed class AccountRepository(FinTrackDbContext dbContext) : IAccountRep
   {
     dbContext.Accounts.Add(account);
 
-    await dbContext.SaveChangesAsync(cancellationToken); 
+    await dbContext.SaveChangesAsync(cancellationToken);
   }
 
   public async Task<IReadOnlyList<Account>> ListAsync(
