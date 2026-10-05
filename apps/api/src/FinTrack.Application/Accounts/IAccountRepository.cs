@@ -17,4 +17,9 @@ public interface IAccountRepository
     Guid id,
     CancellationToken cancellationToken = default
   );
+
+  Task UpdateAsync(
+    Account account,
+    CancellationToken cancellationToken = default
+  );
 }
