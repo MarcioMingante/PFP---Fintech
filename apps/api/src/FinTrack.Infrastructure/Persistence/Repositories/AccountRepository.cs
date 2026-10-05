@@ -48,4 +48,14 @@ public sealed class AccountRepository(FinTrackDbContext dbContext) : IAccountRep
 
     await dbContext.SaveChangesAsync(cancellationToken);
   }
+
+  public async Task DeleteAsync(
+    Account account,
+    CancellationToken cancellationToken = default
+  )
+  {
+    dbContext.Accounts.Remove(account);
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
 }

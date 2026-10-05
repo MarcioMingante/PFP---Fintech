@@ -77,5 +77,13 @@ public sealed class ListAccountsHandlerTests
     {
         throw new NotSupportedException();
     }
+
+    public Task DeleteAsync(
+        Account account,
+        CancellationToken cancellationToken = default
+    )
+    {
+        throw new NotSupportedException();
+    }
   }
 }

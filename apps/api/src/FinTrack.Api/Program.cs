@@ -5,6 +5,7 @@ using FinTrack.Application.Accounts.Validators;
 using FinTrack.Application.Accounts.Queries.ListAccounts;
 using FinTrack.Application.Accounts.Queries.GetAccount;
 using FinTrack.Application.Accounts.Commands.UpdateAccount;
+using FinTrack.Application.Accounts.Commands.DeleteAccount;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,7 @@ builder.Services.AddScoped<ListAccountsHandler>();
 builder.Services.AddScoped<GetAccountHandler>();
 builder.Services.AddScoped<UpdateAccountHandler>();
 builder.Services.AddScoped<UpdateAccountCommandValidator>();
+builder.Services.AddScoped<DeleteAccountHandler>();
 
 var app = builder.Build();
 
@@ -115,6 +117,30 @@ app.MapPut(
         }
 
         return Results.Ok(account);
+    }
+);
+
+app.MapDelete(
+    "accounts/{id:guid}",
+    async (
+        Guid id,
+        DeleteAccountHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var command = new DeleteAccountCommand(id);
+
+        var deleted = await handler.HandleAsync(
+            command,
+            cancellationToken
+        );
+
+        if (!deleted)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.NoContent();
     }
 );
 

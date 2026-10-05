@@ -1,40 +1,33 @@
 using FinTrack.Application.Accounts;
-using FinTrack.Application.Accounts.Commands.UpdateAccount;
+using FinTrack.Application.Accounts.Commands.DeleteAccount;
 using FinTrack.Domain.Accounts;
 
 namespace FinTrack.UnitTests.Application.Accounts;
 
-public sealed class UpdateAccountHandlerTests
+public sealed class DeleteAccountHandlerTests
 {
     [Fact]
-    public async Task Handle_WithExistingAccount_UpdatesAndReturnsAccount()
+    public async Task Handle_WithExistingAccount_DeletesAndReturnsTrue()
     {
         // Arrange
-        var account = new Account("Conta antiga");
+        var account = new Account("Conta corrente");
         var repository = new FakeAccountRepository(account);
-        var handler = new UpdateAccountHandler(repository);
-
-        var command = new UpdateAccountCommand(
-            account.Id,
-            "Conta nova"
-        );
+        var handler = new DeleteAccountHandler(repository);
+        var command = new DeleteAccountCommand(account.Id);
 
         // Act
         var result = await handler.HandleAsync(command);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(repository.UpdatedAccount);
-        Assert.Equal("Conta nova", repository.UpdatedAccount.Name);
-        Assert.Equal(account.Id, result.Id);
-        Assert.Equal("Conta nova", result.Name);
+        Assert.True(result);
+        Assert.Same(account, repository.DeletedAccount);
     }
 
     private sealed class FakeAccountRepository(
         Account? storedAccount
     ) : IAccountRepository
     {
-        public Account? UpdatedAccount { get; private set; }
+        public Account? DeletedAccount { get; private set; }
 
         public Task AddAsync(
             Account account,
@@ -68,9 +61,7 @@ public sealed class UpdateAccountHandlerTests
             CancellationToken cancellationToken = default
         )
         {
-            UpdatedAccount = account;
-
-            return Task.CompletedTask;
+            throw new NotSupportedException();
         }
 
         public Task DeleteAsync(
@@ -78,27 +69,28 @@ public sealed class UpdateAccountHandlerTests
             CancellationToken cancellationToken = default
         )
         {
-            throw new NotSupportedException();
+            DeletedAccount = account;
+
+            return Task.CompletedTask;
         }
     }
 
     [Fact]
-    public async Task Handle_WithUnknownId_ReturnsNullWithoutUpdating()
+    public async Task Handle_WithUnknownId_ReturnsFalseWithoutDeleting()
     {
         // Arrange
         var repository = new FakeAccountRepository(null);
-        var handler = new UpdateAccountHandler(repository);
+        var handler = new DeleteAccountHandler(repository);
 
-        var command = new UpdateAccountCommand(
-            Guid.NewGuid(),
-            "Conta nova"
+        var command = new DeleteAccountCommand(
+            Guid.NewGuid()
         );
 
         // Act
         var result = await handler.HandleAsync(command);
 
         // Assert
-        Assert.Null(result);
-        Assert.Null(repository.UpdatedAccount);
+        Assert.False(result);
+        Assert.Null(repository.DeletedAccount);
     }
 }

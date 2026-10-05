@@ -22,4 +22,9 @@ public interface IAccountRepository
     Account account,
     CancellationToken cancellationToken = default
   );
+
+  Task DeleteAsync(
+    Account account,
+    CancellationToken cancellationToken = default
+  );
 }
