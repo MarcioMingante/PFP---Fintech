@@ -2,13 +2,14 @@ using FinTrack.Infrastructure;
 using FinTrack.Application.Accounts.Commands.CreateAccount;
 using FinTrack.Api.Contracts.Accounts;
 using FinTrack.Application.Accounts.Validators;
+using FinTrack.Application.Accounts.Queries.ListAccounts;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<CreateAccountHandler>();
 builder.Services.AddScoped<CreateAccountCommandValidator>();
-
+builder.Services.AddScoped<ListAccountsHandler>();
 var app = builder.Build();
 
 app.MapGet("/health", () => Results.Ok(new
@@ -36,6 +37,21 @@ app.MapPost(
         var account = await handler.HandleAsync(command, cancellationToken);
 
         return Results.Created($"/accounts/{account.Id}", account);
+    }
+);
+
+app.MapGet(
+    "/accounts",
+    async (
+        ListAccountsHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var query = new ListAccountsQuery();
+
+        var accounts = await handler.HandleAsync(query, cancellationToken);
+
+        return Results.Ok(accounts);
     }
 );
 
