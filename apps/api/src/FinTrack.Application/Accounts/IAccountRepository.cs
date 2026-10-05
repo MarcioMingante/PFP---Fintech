@@ -12,4 +12,9 @@ public interface IAccountRepository
   Task<IReadOnlyList<Account>> ListAsync(
     CancellationToken cancellationToken = default
   );
+
+  Task<Account?> GetByIdAsync(
+    Guid id,
+    CancellationToken cancellationToken = default
+  );
 }

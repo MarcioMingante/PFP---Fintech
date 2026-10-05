@@ -57,5 +57,17 @@ public sealed class ListAccountsHandlerTests
     {
       return Task.FromResult(accounts);
     }
+
+    public Task<Account?> GetByIdAsync(
+      Guid id,
+      CancellationToken cancellationToken = default
+    )
+    {
+      var account = accounts.FirstOrDefault(
+        account => account.Id == id
+      );
+
+      return Task.FromResult(account);
+    }
   }
 }

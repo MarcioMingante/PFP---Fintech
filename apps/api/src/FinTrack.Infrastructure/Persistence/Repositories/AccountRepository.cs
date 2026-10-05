@@ -25,4 +25,17 @@ public sealed class AccountRepository(FinTrackDbContext dbContext) : IAccountRep
       .OrderBy(account => account.Name)
       .ToListAsync(cancellationToken);
   }
+
+  public async Task<Account?> GetByIdAsync(
+    Guid id,
+    CancellationToken cancellationToken = default
+  )
+  {
+    return await dbContext.Accounts
+      .AsNoTracking()
+      .FirstOrDefaultAsync(
+        account => account.Id == id,
+        cancellationToken
+      );
+  }
 }

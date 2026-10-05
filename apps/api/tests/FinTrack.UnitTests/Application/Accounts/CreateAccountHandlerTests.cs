@@ -44,5 +44,13 @@ public sealed class CreateAccountHandlerTests
         {
             return Task.FromResult<IReadOnlyList<Account>>([]);
         }
+
+        public Task<Account?> GetByIdAsync(
+            Guid id,
+            CancellationToken cancellationToken = default
+        )
+        {
+            return Task.FromResult<Account?>(null);
+        }
     }
 }
