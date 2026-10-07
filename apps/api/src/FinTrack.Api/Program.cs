@@ -6,6 +6,9 @@ using FinTrack.Application.Accounts.Queries.ListAccounts;
 using FinTrack.Application.Accounts.Queries.GetAccount;
 using FinTrack.Application.Accounts.Commands.UpdateAccount;
 using FinTrack.Application.Accounts.Commands.DeleteAccount;
+using FinTrack.Api.Contracts.Categories;
+using FinTrack.Application.Categories.Commands.CreateCategory;
+using FinTrack.Application.Categories.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +20,8 @@ builder.Services.AddScoped<GetAccountHandler>();
 builder.Services.AddScoped<UpdateAccountHandler>();
 builder.Services.AddScoped<UpdateAccountCommandValidator>();
 builder.Services.AddScoped<DeleteAccountHandler>();
+builder.Services.AddScoped<CreateCategoryHandler>();
+builder.Services.AddScoped<CreateCategoryCommandValidator>();
 
 var app = builder.Build();
 
@@ -144,6 +149,35 @@ app.MapDelete(
         }
 
         return Results.NoContent();
+    }
+);
+
+app.MapPost(
+    "/categories",
+    async (
+        CreateCategoryRequest request,
+        CreateCategoryCommandValidator validator,
+        CreateCategoryHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var command = new CreateCategoryCommand(request.Name);
+        var errors = validator.Validate(command);
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var category = await handler.HandleAsync(
+            command,
+            cancellationToken
+        );
+
+        return Results.Created(
+            $"/categories/{category.Id}",
+            category
+        );
     }
 );
 

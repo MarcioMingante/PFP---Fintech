@@ -18,10 +18,6 @@ public sealed class Category
     Name = name.Trim();
   }
 
-  public Guid Id { get; private set; }
-
-  public string Name { get; private set; } = string.Empty;
-
   public void Rename(string name)
   {
     if (string.IsNullOrWhiteSpace(name))
@@ -34,4 +30,8 @@ public sealed class Category
 
     Name = name.Trim();
   }
+
+  public Guid Id { get; private set; }
+
+  public string Name { get; private set; } = string.Empty;
 }

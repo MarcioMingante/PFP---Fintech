@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using FinTrack.Application.Accounts;
 using FinTrack.Infrastructure.Persistence.Repositories;
+using FinTrack.Application.Categories;
 
 namespace FinTrack.Infrastructure;
 
@@ -21,6 +22,7 @@ public static class DependencyInjection
       options.UseNpgsql(connectionString));
 
     services.AddScoped<IAccountRepository, AccountRepository>();
+    services.AddScoped<ICategoryRepository, CategoryRepository>();
 
     return services;
   }
