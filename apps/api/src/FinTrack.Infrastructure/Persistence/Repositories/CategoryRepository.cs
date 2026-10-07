@@ -1,6 +1,7 @@
 using FinTrack.Application.Categories;
 using FinTrack.Domain.Categories;
 using FinTrack.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinTrack.Infrastructure.Persistence.Repositories;
 
@@ -14,5 +15,15 @@ public sealed class CategoryRepository(FinTrackDbContext dbContext) : ICategoryR
     dbContext.Categories.Add(category);
 
     await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  public async Task<IReadOnlyList<Category>> ListAsync(
+    CancellationToken cancellationToken = default
+  )
+  {
+    return await dbContext.Categories
+      .AsNoTracking()
+      .OrderBy(category => category.Name)
+      .ToListAsync(cancellationToken);
   }
 }

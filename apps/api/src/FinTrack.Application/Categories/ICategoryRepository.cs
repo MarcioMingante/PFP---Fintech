@@ -8,4 +8,8 @@ public interface ICategoryRepository
     Category category,
     CancellationToken cancellationToken = default
   );
+
+  Task<IReadOnlyList<Category>> ListAsync(
+    CancellationToken cancellationToken = default
+  );
 }

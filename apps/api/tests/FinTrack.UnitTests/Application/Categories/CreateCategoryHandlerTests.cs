@@ -28,6 +28,13 @@ public sealed class CreateCategoryHandlerTests
   {
     public Category? AddedCategory { get; private set; }
 
+    public Task<IReadOnlyList<Category>> ListAsync(
+      CancellationToken cancellationToken = default
+    )
+    {
+      throw new NotSupportedException();
+    }
+
     public Task AddAsync(
       Category category,
       CancellationToken cancellationToken = default
