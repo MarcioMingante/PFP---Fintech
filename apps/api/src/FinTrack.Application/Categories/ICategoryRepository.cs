@@ -12,4 +12,9 @@ public interface ICategoryRepository
   Task<IReadOnlyList<Category>> ListAsync(
     CancellationToken cancellationToken = default
   );
+
+  Task<Category?> GetByIdAsync(
+    Guid id,
+    CancellationToken cancellationToken = default
+  );
 }

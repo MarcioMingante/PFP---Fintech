@@ -55,6 +55,14 @@ public sealed class ListCategoriesHandlerTests
     IReadOnlyList<Category> categories
   ) : ICategoryRepository
   {
+    public Task<Category?> GetByIdAsync(
+      Guid id,
+      CancellationToken cancellationToken = default
+    )
+    {
+      throw new NotSupportedException();
+    }
+
     public Task AddAsync(
       Category category,
       CancellationToken cancellationToken = default

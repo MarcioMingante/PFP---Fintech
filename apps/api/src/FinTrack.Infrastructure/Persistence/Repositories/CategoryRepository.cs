@@ -26,4 +26,17 @@ public sealed class CategoryRepository(FinTrackDbContext dbContext) : ICategoryR
       .OrderBy(category => category.Name)
       .ToListAsync(cancellationToken);
   }
+
+  public async Task<Category?> GetByIdAsync(
+    Guid id,
+    CancellationToken cancellationToken = default
+  )
+  {
+    return await dbContext.Categories
+      .AsNoTracking()
+      .FirstOrDefaultAsync(
+        category => category.Id == id,
+        cancellationToken
+      );
+  }
 }

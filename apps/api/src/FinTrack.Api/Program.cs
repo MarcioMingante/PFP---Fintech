@@ -10,6 +10,7 @@ using FinTrack.Api.Contracts.Categories;
 using FinTrack.Application.Categories.Commands.CreateCategory;
 using FinTrack.Application.Categories.Validators;
 using FinTrack.Application.Categories.Queries.ListCategories;
+using FinTrack.Application.Categories.Queries.GetCategory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,7 @@ builder.Services.AddScoped<DeleteAccountHandler>();
 builder.Services.AddScoped<CreateCategoryHandler>();
 builder.Services.AddScoped<CreateCategoryCommandValidator>();
 builder.Services.AddScoped<ListCategoriesHandler>();
+builder.Services.AddScoped<GetCategoryHandler>();
 
 var app = builder.Build();
 
@@ -195,6 +197,27 @@ app.MapGet(
         var categories = await handler.HandleAsync(query, cancellationToken);
 
         return Results.Ok(categories);
+    }
+);
+
+app.MapGet(
+    "/categories/{id:guid}",
+    async (
+        Guid id,
+        GetCategoryHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var query = new GetCategoryQuery(id);
+
+        var category = await handler.HandleAsync(query, cancellationToken);
+
+        if (category is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(category);
     }
 );
 
