@@ -11,6 +11,7 @@ using FinTrack.Application.Categories.Commands.CreateCategory;
 using FinTrack.Application.Categories.Validators;
 using FinTrack.Application.Categories.Queries.ListCategories;
 using FinTrack.Application.Categories.Queries.GetCategory;
+using FinTrack.Application.Categories.Commands.UpdateCategory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,8 @@ builder.Services.AddScoped<CreateCategoryHandler>();
 builder.Services.AddScoped<CreateCategoryCommandValidator>();
 builder.Services.AddScoped<ListCategoriesHandler>();
 builder.Services.AddScoped<GetCategoryHandler>();
+builder.Services.AddScoped<UpdateCategoryHandler>();
+builder.Services.AddScoped<UpdateCategoryCommandValidator>();
 
 var app = builder.Build();
 
@@ -211,6 +214,35 @@ app.MapGet(
         var query = new GetCategoryQuery(id);
 
         var category = await handler.HandleAsync(query, cancellationToken);
+
+        if (category is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(category);
+    }
+);
+
+app.MapPut(
+    "/categories/{id:guid}",
+    async (
+        Guid id,
+        UpdateCategoryRequest request,
+        UpdateCategoryCommandValidator validator,
+        UpdateCategoryHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var command = new UpdateCategoryCommand(id, request.Name);
+        var errors = validator.Validate(command);
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var category = await handler.HandleAsync(command, cancellationToken);
 
         if (category is null)
         {

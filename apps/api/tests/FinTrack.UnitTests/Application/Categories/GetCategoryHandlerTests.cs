@@ -41,6 +41,14 @@ public sealed class GetCategoryHandlerTests
   private sealed class FakeCategoryRepository(Category category)
     : ICategoryRepository
   {
+    public Task UpdateAsync(
+      Category category,
+      CancellationToken cancellationToken = default
+    )
+    {
+      throw new NotSupportedException();
+    }
+
     public Task<Category?> GetByIdAsync(
       Guid id,
       CancellationToken cancellationToken = default

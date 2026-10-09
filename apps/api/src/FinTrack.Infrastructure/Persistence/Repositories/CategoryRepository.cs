@@ -39,4 +39,14 @@ public sealed class CategoryRepository(FinTrackDbContext dbContext) : ICategoryR
         cancellationToken
       );
   }
+
+  public async Task UpdateAsync(
+    Category category,
+    CancellationToken cancellationToken = default
+  )
+  {
+    dbContext.Categories.Update(category);
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
 }
