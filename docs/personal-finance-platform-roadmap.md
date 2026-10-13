@@ -749,6 +749,20 @@ Container Health Check
 
 # Fase 9 — Frontend Skeleton
 
+## Execução no repositório
+
+- [x] Estrutura Next.js/TypeScript com diretórios previstos.
+- [x] Rotas `/dashboard`, `/accounts`, `/transactions` e `/categories`.
+- [x] Layout responsivo, navegação ativa e metadados em português.
+- [x] Server/Client Components, React State e formulário de busca.
+- [x] Serviço HTTP configurável, schemas Zod e leitura de contas/categorias.
+- [x] Estados de carregamento, erro, lista vazia e página não encontrada.
+- [x] Lint, typecheck, três testes automatizados, build e smoke HTTP validados.
+
+Frontend executa localmente contra API Docker. Escrita/CRUD permanece na fase
+10; transações aguardam backend da fase 6. Revisão visual no navegador ainda
+não realizada: nenhum navegador disponível na sessão de implementação.
+
 Agora criamos:
 
 ```text

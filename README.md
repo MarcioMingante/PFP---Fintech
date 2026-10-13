@@ -138,3 +138,51 @@ execuções. Para diagnóstico: `docker compose ps` e `docker compose logs`.
 
 Dockerização cobre módulos atuais de contas e categorias. Transações continuam
 pendentes da fase 6.
+
+## Fase 9 — Frontend Skeleton
+
+Pré-requisitos: Node.js 24 e API Docker da fase 8. Na raiz:
+
+```bash
+docker compose up --build -d --wait
+cd apps/web
+npm ci
+npm run dev
+```
+
+Frontend local: `http://localhost:3000`. `/` encaminha para `/dashboard`.
+Rotas iniciais: `/dashboard`, `/accounts`, `/transactions` e `/categories`.
+Navegação indica página atual e layout adapta-se a telas menores.
+
+`API_URL` usa `http://localhost:5168` por padrão. Para outra porta/endereço,
+crie `apps/web/.env.local` usando `apps/web/.env.example` como referência.
+Reinicie Next.js após modificar variável. A URL é usada no servidor Next.js;
+navegador não chama API diretamente, então este fluxo não exige CORS.
+
+Estrutura em `src`: `app`, `components`, `features`, `hooks`, `services`,
+`schemas`, `types`, `utils` e `config`. Layout e páginas são Server Components;
+navegação e busca são Client Components com React State. Serviço HTTP faz
+leitura sem cache, timeout de cinco segundos e valida respostas com Zod.
+Contas e categorias exibem dados reais da API e permitem busca sem distinção
+de acentos/maiúsculas. Lista vazia e busca sem resultados têm mensagens próprias.
+
+`loading.tsx` fornece estado de carregamento; `error.tsx` trata falhas com
+botão de nova tentativa. API indisponível não é apresentada como lista vazia.
+`not-found.tsx` trata rotas inexistentes. Dashboard inicial contém navegação
+para módulos, sem valores financeiros fictícios. Transações exibem estado
+“em breve”, pois módulo backend ainda está pendente da fase 6. Formulários de
+cadastro/edição, exclusão e integração de escrita pertencem à fase 10.
+
+Validação no diretório `apps/web`:
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+Testes automatizados cobrem contrato de respostas da API e normalização da
+busca. Build, rotas HTTP, redirect, 404, leitura API/PostgreSQL, listas vazias e
+comportamento com API offline foram verificados em stack isolada. Validação
+visual e interações no navegador ainda precisam de revisão manual.
