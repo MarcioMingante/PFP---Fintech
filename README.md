@@ -225,3 +225,92 @@ Frontend local da fase 9 continua usando `http://localhost:5168`; variáveis em
 `apps/web/.env.local` ficam fora da imagem Docker. Pare `web` antes de executar
 Next.js local na mesma porta. Volume PostgreSQL persiste após `compose down`.
 Dockerização não implementa CRUD pendente da fase 10 nem transações da fase 6.
+
+## Fase 12 — Desenvolvimento vs ambiente completo
+
+`Makefile` na raiz reúne os dois workflows. Pré-requisitos: GNU Make, Docker
+Compose, SDK .NET 10 e Node.js 24. `make help` lista comandos.
+
+### Desenvolvimento
+
+Neste modo, somente PostgreSQL executa em Docker. API e frontend executam
+localmente com atualização automática.
+
+1. Configure `.env` da raiz com as credenciais e porta do PostgreSQL e execute:
+
+   ```bash
+   make dev-db
+   ```
+
+   Este comando para `web` e `api` do Compose antes de iniciar PostgreSQL.
+   Volume e dados são preservados; container de migrations pode permanecer
+   listado como encerrado. Banco aguarda healthcheck antes de concluir.
+
+2. Configure conexão da API local com User Secrets (uma vez), usando os valores
+   de `.env` e **Host=localhost**, e aplique migrations:
+
+   ```bash
+   dotnet user-secrets set "ConnectionStrings:Database" "Host=localhost;Port=5432;Database=fintrack;Username=SEU_USUARIO;Password=SUA_SENHA" --project apps/api/src/FinTrack.Api
+   make dev-migrate
+   ```
+
+   `dev-migrate` usa a mesma configuração da API local e aplica migrations sem
+   iniciar servidor HTTP. Execute novamente após adicionar migrations.
+
+3. Em um terminal, execute API:
+
+   ```bash
+   make dev-api
+   ```
+
+4. Em outro terminal, instale dependências se necessário e execute frontend:
+
+   ```bash
+   npm --prefix apps/web ci
+   make dev-web
+   ```
+
+Next.js permite uma instância de desenvolvimento por checkout, mesmo com portas
+diferentes. Reutilize servidor existente ou encerre seu terminal antes de
+iniciar outro.
+
+API local usa `5168`; frontend usa `3000`. Para portas alternativas:
+
+```bash
+make dev-api API_PORT=5169
+make dev-web WEB_PORT=3001
+```
+
+Se porta da API mudar, ajuste `API_URL=http://localhost:5169` em
+`apps/web/.env.local` e reinicie frontend. Portas dos processos locais são
+opções do Make; portas Docker vêm de `.env`. `.env` da raiz configura Compose,
+não é carregado automaticamente pela API local. User Secrets ou variável
+`ConnectionStrings__Database` configuram a conexão local.
+
+### Ambiente completo
+
+Pare processos locais com `Ctrl+C` nos dois terminais antes de alternar:
+
+```bash
+make full
+make status
+```
+
+`full` executa `docker compose up --build -d --wait`. Todo runtime fica em
+Docker, com conexões `web` para `api:8080` e `api` para `postgres:5432`.
+O mesmo volume PostgreSQL é usado nos dois modos, mantendo dados entre eles.
+Para voltar ao desenvolvimento, execute `make dev-db` e inicie processos locais.
+
+```bash
+make stop
+```
+
+`stop` encerra Compose e preserva volume; processos locais devem ser encerrados
+nos seus terminais. Nenhum comando do Make remove dados. Não há arquivos
+Compose adicionais obrigatórios nesta fase: seleção explícita de serviços
+mantém fluxo simples. Configuração de produção permanece fora deste escopo.
+
+Validação da fase 12: `make full`, alternância para `dev-db`, migrations locais,
+API com dotnet watch e preservação de dados passaram em ambiente isolado.
+Comando `dev-web` foi conferido; nova instância Next.js não pôde ser validada
+porque já havia servidor de desenvolvimento neste checkout.

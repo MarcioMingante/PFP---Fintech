@@ -940,6 +940,20 @@ Container networking
 
 # Fase 12 — Development Compose vs Full Compose
 
+## Execução no repositório
+
+- [x] Makefile com comandos de desenvolvimento, migrations locais e ambiente completo.
+- [x] `dev-db` para web/API Docker e mantém somente PostgreSQL executando.
+- [x] `dev-api` com dotnet watch e `dev-web` com npm run dev.
+- [x] Portas locais configuráveis e instruções de conexão via User Secrets.
+- [x] `full`, `status` e `stop` para execução completa e encerramento sem remover dados.
+- [x] Alternância Docker/local e persistência verificadas em stack isolada.
+
+Workflow documentado no README. Mesmo Compose e volume atendem os dois modos;
+separação adicional de arquivos Compose permanece opcional para evolução futura.
+Validação de nova instância Next.js limitada por servidor dev já ativo no checkout;
+comando conferido e servidor existente preservado.
+
 Aqui vale organizar o workflow.
 
 Durante desenvolvimento:
