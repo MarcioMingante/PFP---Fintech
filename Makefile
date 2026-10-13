@@ -4,14 +4,18 @@ WEB_PORT ?= 3000
 REDIS_PORT ?= 6379
 IMAGE_TAG ?= local
 export IMAGE_TAG
+TERRAFORM ?= terraform
+TF_LOCAL = env -u DOCKER_CONTEXT -u DOCKER_HOST $(TERRAFORM) -chdir=ops/terraform/local
 
 .PHONY: help dev-db dev-migrate dev-api dev-web full status stop test-api test-integration test-fast test-e2e dev-observability
 .PHONY: ci ci-web ci-api ci-e2e ci-install ci-install-e2e
 .PHONY: images-build images-run
 .PHONY: setup config-check logs migrate
 .PHONY: test-messaging
+.PHONY: iac-init iac-validate iac-plan iac-apply iac-destroy
 
 help:
+	@echo "iac-init/validate/plan/apply/destroy  Exercício Terraform Docker isolado"
 	@echo "test-messaging  Valida mensageria com testes direcionados (Docker necessário)"
 	@echo "setup           Cria .env local com segredos aleatórios, sem sobrescrever"
 	@echo "config-check    Valida configuração Compose sem exibir segredos"
@@ -89,6 +93,22 @@ test-integration:
 test-messaging:
 	dotnet test apps/api/tests/FinTrack.UnitTests -m:1 --filter FullyQualifiedName~FinTrack.UnitTests.Messaging.MessagingTests
 	dotnet test apps/api/tests/FinTrack.IntegrationTests -m:1 --filter FullyQualifiedName~FinTrack.IntegrationTests.MessagingTests
+
+iac-init:
+	$(TF_LOCAL) init
+
+iac-validate:
+	$(TF_LOCAL) fmt -check -recursive
+	$(TF_LOCAL) validate
+
+iac-plan:
+	$(TF_LOCAL) plan -out=local.tfplan
+
+iac-apply:
+	$(TF_LOCAL) apply local.tfplan
+
+iac-destroy:
+	$(TF_LOCAL) destroy
 
 test-fast:
 	dotnet test apps/api/tests/FinTrack.UnitTests -m:1

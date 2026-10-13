@@ -1955,6 +1955,19 @@ AWS no caminho executável.
 Entrega: exemplo local reproduzível, sem credenciais cloud. Arquitetura AWS da
 fase 28 permanece documental; nenhum `apply` provisiona serviços externos.
 
+## Entrega aplicada
+
+- [x] Laboratório Terraform opcional com provider Docker e módulo HTTP local.
+- [x] Rede/container descartáveis separados dos objetos Compose.
+- [x] Backend local; state, backups e planos excluídos do Git.
+- [x] Versão/checksums do provider no lockfile e alvos Make para ciclo completo.
+- [x] Providers, resources, modules, state, plan, apply e destroy documentados.
+- [x] Sem AWS, backend remoto pago, Terraform cloud ou credenciais externas.
+
+Exercício: [Terraform Docker local](../ops/terraform/local/README.md).
+Decisão: [026 — Exercício Terraform local](decisions/026-local-terraform-lab.md).
+
+
 ---
 
 # Fase 31 — Release e entrega local

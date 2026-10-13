@@ -148,6 +148,30 @@ Não há replay automático nem envio de notificações externas.
 Validação da fase 29: 5 unitários e 9 integrações de mensageria aprovados,
 sem skips. Links locais e diagnóstico somente leitura conferidos.
 
+## Fase 30 — Infrastructure as Code local
+
+Docker Compose permanece gerenciador da aplicação. [Laboratório Terraform Docker](ops/terraform/local/README.md)
+pratica provider, resources, módulo reutilizável, state local e ciclo plan/apply/destroy
+com servidor HTTP descartável, sem volumes ou dados pessoais. [ADR 026](docs/decisions/026-local-terraform-lab.md)
+registra isolamento e decisões.
+
+Com Terraform CLI e Docker local disponíveis:
+
+```bash
+make iac-init
+make iac-validate
+make iac-plan
+# Revise plano: somente rede, imagem e container do laboratório.
+make iac-apply
+make iac-destroy
+```
+
+Apply executa plano salvo; destroy pede confirmação. State/planos ficam fora do
+Git; lockfile fica versionado. Sem AWS, backend remoto, HCP Terraform ou GHCR.
+Exercício opcional: não substitui `make full` nem gerencia recursos Compose.
+Validação: fmt/validate, plan/apply, HTTP e destroy aprovados; segundo plan sem
+mudanças. Containers existentes preservados. Terraform CLI não foi instalado globalmente.
+
 ## Backend local
 
 Pré-requisitos: SDK .NET 10 e chave JWT configurada conforme fase 13. PostgreSQL em Docker é necessário para operações
