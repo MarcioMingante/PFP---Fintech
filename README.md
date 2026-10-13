@@ -96,3 +96,45 @@ Não configure credenciais do banco pessoal ou de produção.
 Transactions e transferências da fase 6 ainda não existem neste repositório.
 Seus testes de domínio, saldo e atomicidade deverão acompanhar implementação.
 Testcontainers permanece previsto para fase 19.
+
+## Fase 8 — API em Docker
+
+Na raiz, copie `.env.example` para `.env` caso ainda não exista e configure
+credenciais locais do PostgreSQL. `API_PORT` é opcional e usa `5168` por padrão.
+
+```bash
+docker compose up --build -d --wait
+curl --fail http://localhost:5168/health
+curl --fail http://localhost:5168/accounts
+docker compose logs api migrate
+docker compose down
+```
+
+Compose inicia PostgreSQL, aguarda seu healthcheck, executa `migrate` e inicia
+API somente quando migrations terminam com sucesso. `migrate` é um container
+provisório com a mesma imagem da API, executado com `--migrate`; aplica migrations
+pendentes e termina sem abrir servidor HTTP. Falha de migration impede startup
+da API. O comando pode ser repetido: migrations já aplicadas não são reaplicadas.
+
+Dockerfile usa SDK .NET 10 para restore/publicação em Release e imagem ASP.NET
+Core para execução. Runtime não inclui SDK nem fontes, executa como usuário sem
+privilégios e expõe porta `8080`. Healthcheck consulta `/health` via HTTP: verifica
+servidor, não conexão com banco. `.dockerignore` exclui artefatos locais e testes
+do contexto de build. Credenciais chegam por variáveis em runtime.
+
+Dentro da rede Compose, API encontra PostgreSQL em `postgres:5432`; porta
+`POSTGRES_PORT` é usada apenas por clientes na máquina. Serviço `api` publica
+`${API_PORT:-5168}:8080`. Para manter desenvolvimento com API local:
+
+```bash
+docker compose up -d postgres
+dotnet watch --project apps/api/src/FinTrack.Api run --launch-profile http
+```
+
+Use `Host=localhost` na conexão da API local. API local e API Docker usam mesma
+porta padrão; pare serviço `api` ou configure outra `API_PORT` antes de executar
+ambas. `docker compose down` preserva volume PostgreSQL; dados persistem entre
+execuções. Para diagnóstico: `docker compose ps` e `docker compose logs`.
+
+Dockerização cobre módulos atuais de contas e categorias. Transações continuam
+pendentes da fase 6.

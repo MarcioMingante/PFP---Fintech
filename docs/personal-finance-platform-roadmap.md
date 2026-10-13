@@ -664,6 +664,18 @@ Database/API
 
 # Fase 8 — Dockerizar API
 
+## Execução no repositório
+
+- [x] Dockerfile .NET 10 com build em múltiplos estágios e runtime sem privilégios.
+- [x] API e PostgreSQL no Compose com conexão via `Host=postgres`.
+- [x] Migrations em container provisório antes de iniciar API.
+- [x] Healthchecks HTTP/PostgreSQL e documentação de execução local.
+- [x] Build Docker, startup com banco vazio, migrations idempotentes, persistência
+  após reinício e suíte de 62 testes validados em ambiente isolado.
+
+Dockerização aplicada aos módulos existentes. Transactions da fase 6 permanece
+pendente; não impede execução da infraestrutura desta fase.
+
 Agora a API já possui:
 
 ```text

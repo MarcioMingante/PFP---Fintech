@@ -1,4 +1,6 @@
 using FinTrack.Infrastructure;
+using FinTrack.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using FinTrack.Application.Accounts.Commands.CreateAccount;
 using FinTrack.Api.Contracts.Accounts;
 using FinTrack.Application.Accounts.Validators;
@@ -31,6 +33,16 @@ builder.Services.AddScoped<UpdateCategoryHandler>();
 builder.Services.AddScoped<UpdateCategoryCommandValidator>();
 
 var app = builder.Build();
+
+// Compose runs migrations in a one-off container before starting the HTTP API.
+if (args.Contains("--migrate", StringComparer.Ordinal))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var database = scope.ServiceProvider.GetRequiredService<FinTrackDbContext>();
+    await database.Database.MigrateAsync();
+    await app.DisposeAsync();
+    return;
+}
 
 app.MapGet("/health", () => Results.Ok(new
 {
