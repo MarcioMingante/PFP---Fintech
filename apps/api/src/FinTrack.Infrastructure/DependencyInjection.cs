@@ -26,6 +26,7 @@ public static class DependencyInjection
     services.AddScoped<FinTrack.Application.Invoices.IInvoiceRepository, InvoiceRepository>();
     services.AddScoped<FinTrack.Application.Recurring.IRecurringTransactionRepository, RecurringTransactionRepository>();
     services.AddScoped<FinTrack.Application.Dashboard.IDashboardRepository, DashboardRepository>();
+    services.AddScoped<FinTrack.Application.Transactions.ITransactionRepository, TransactionRepository>();
     services.AddScoped<IAccountRepository, AccountRepository>();
     services.AddScoped<ICategoryRepository, CategoryRepository>();
 

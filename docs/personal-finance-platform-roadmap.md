@@ -1408,8 +1408,8 @@ Read model
 - [x] Makefile e documentação de execução com/sem Docker.
 - [x] 150 testes backend passaram (48 integração), nenhum ignorado; containers
   removidos automaticamente após execução.
-- [ ] POST manual `/transactions` e transfers: dependem de endpoints ainda
-  ausentes da fase 6. Geração de transações recorrentes já possui cobertura.
+- [x] POST manual `/transactions`: implementado/testado na fase 20.
+- [ ] Transfers: dependem de endpoints ainda ausentes da fase 6.
 
 Infraestrutura da fase implementada para funcionalidades existentes. Docker
 ativo é requisito de integração; falhas de ambiente/migration fazem suíte falhar.
@@ -1464,6 +1464,24 @@ Deterministic tests
 ---
 
 # Fase 20 — E2E Testing
+
+## Execução no repositório
+
+- [x] Playwright Test com Chromium desktop e mobile.
+- [x] Runner com PostgreSQL descartável, migrations, API/web e portas aleatórias.
+- [x] Build `.next-e2e` separado do desenvolvimento e cleanup automático.
+- [x] Cadastro/login/logout, erro de credenciais e cookies HttpOnly.
+- [x] Criação de conta, lançamento manual de receita/despesa e dashboard real.
+- [x] Cartão, compra parcelada, calendário/centavos e faturas persistidas.
+- [x] Páginas protegidas, isolamento entre usuários e data inválida.
+- [x] Gráficos ECharts renderizados e ausência de overflow no fluxo principal.
+- [x] Trace/screenshot/vídeo em falhas e relatório HTML local.
+- [x] 6 E2E passaram, sem retries; 152 backend e 8 frontend passaram.
+
+Formulários essenciais foram incluídos para testar produto pelo navegador.
+Lançamentos manuais agora disponíveis, com migration preservando recorrentes.
+Transferências, edição/exclusão de lançamentos e pagamentos permanecem pendentes.
+
 
 Agora Playwright.
 

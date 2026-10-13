@@ -56,3 +56,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Isolated browser test artifacts
+.next-e2e/
+playwright-report/
+test-results/

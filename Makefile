@@ -2,9 +2,10 @@ COMPOSE ?= docker compose
 API_PORT ?= 5168
 WEB_PORT ?= 3000
 
-.PHONY: help dev-db dev-migrate dev-api dev-web full status stop test-api test-integration test-fast
+.PHONY: help dev-db dev-migrate dev-api dev-web full status stop test-api test-integration test-fast test-e2e
 
 help:
+	@echo "test-e2e         Executa Playwright desktop/mobile em stack isolada"
 	@echo "test-api         Executa toda suíte backend com Testcontainers"
 	@echo "test-integration Executa somente integração (Docker necessário)"
 	@echo "test-fast        Executa unitários e arquitetura sem Docker"
@@ -48,3 +49,7 @@ test-integration:
 test-fast:
 	dotnet test apps/api/tests/FinTrack.UnitTests -m:1
 	dotnet test apps/api/tests/FinTrack.ArchitectureTests -m:1
+
+
+test-e2e:
+	npm --prefix apps/web run e2e

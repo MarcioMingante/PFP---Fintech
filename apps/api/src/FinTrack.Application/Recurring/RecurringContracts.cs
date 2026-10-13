@@ -14,7 +14,7 @@ public sealed record RecurringTransactionDto(Guid Id, Guid AccountId, Guid? Cate
         item.CategoryId, item.Description, item.Amount, item.Type.ToString(), "Monthly", item.StartDate,
         item.EndDate, item.NextOccurrenceDate, item.IsActive);
 }
-public sealed record TransactionDto(Guid Id, Guid AccountId, Guid? CategoryId, Guid RecurringTransactionId,
+public sealed record TransactionDto(Guid Id, Guid AccountId, Guid? CategoryId, Guid? RecurringTransactionId,
     string Description, decimal Amount, string Type, DateOnly OccurredOn)
 {
     public static TransactionDto From(Transaction item) => new(item.Id, item.AccountId, item.CategoryId,

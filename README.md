@@ -630,7 +630,58 @@ e sem FINTRACK_TEST_DATABASE. Containers temporários removidos automaticamente.
 Novo teste verifica isolamento físico e encerramento independente de duas
 fixtures. Não há banco externo ou porta fixa para configurar.
 
-POST manual `/transactions` e transferências ainda dependem da fase 6;
-transações geradas por recorrências já são testadas. Decisão em
+POST manual `/transactions` implementado na fase 20; transferências ainda
+dependem da fase 6. Transações geradas por recorrências já são testadas. Decisão em
 [015 — Testcontainers](docs/decisions/015-testcontainers-integration.md), baseada
 no [módulo oficial PostgreSQL](https://dotnet.testcontainers.org/modules/postgres/).
+
+### Playwright E2E — fase 20
+
+Instale dependências do frontend e Chromium oficial:
+
+```bash
+cd apps/web
+npm ci
+npx playwright install chromium
+npm run e2e
+```
+
+Em Linux sem dependências nativas do navegador, use
+`npx playwright install --with-deps chromium` conforme ambiente. Docker e SDK
+.NET 10 precisam estar disponíveis. Na raiz, `make test-e2e` executa mesmo runner.
+
+Runner cria banco PostgreSQL temporário sem volume, aplica migrations, builda
+API e Next.js com Webpack em `.next-e2e`, inicia servidores em portas aleatórias
+e roda Chromium desktop/mobile. Não depende de Compose, `.env` pessoal ou banco
+externo. Processos e container são encerrados também quando testes falham.
+Config rejeita execução direta sem ambiente isolado; prefira `npm run e2e`.
+
+Cada cenário cadastra usuário próprio pelo navegador. Fluxos cobrem:
+
+- Cadastro, login inválido/válido, logout, conta, receita/despesa e dashboard;
+- Cartão, compra parcelada e datas/valores de faturas;
+- Sessão obrigatória, isolamento entre usuários e filtro de data inválida.
+
+Sem mocks ou retries. Gráficos SVG são verificados, histórico possui alternativa
+acessível, e fluxo principal testa overflow no mobile. Falhas retêm trace,
+screenshot e vídeo em `test-results`; relatório HTML em `playwright-report`:
+
+```bash
+npm run e2e:report
+```
+
+Artefatos são ignorados no Git e contêm somente sessão/dados sintéticos da
+stack de teste. Playwright não reutiliza sessão pessoal do navegador.
+
+Para permitir fluxos completos, `/accounts` ganhou criação; `/transactions`
+possui formulário/listagem e POST autenticado de receitas/despesas manuais;
+`/credit-cards` cria cartões/compras e mostra faturas. Migration
+`AllowManualTransactions` permite referência de recorrência nula e preserva
+lançamentos gerados. Data manual não pode ser futura; conta/categoria devem
+pertencer ao usuário. Transferências, edição/exclusão e pagamentos não fazem
+parte desta entrega. Login preserva e-mail após erro de credenciais.
+
+Validação: **6 E2E** desktop/mobile, **152 backend** (50 integração), **8 frontend**,
+lint, typecheck e build Webpack passaram. Cleanup de containers confirmado.
+Decisão em [016 — Playwright E2E](docs/decisions/016-playwright-e2e.md), com
+[configuração oficial Playwright](https://playwright.dev/docs/test-configuration).

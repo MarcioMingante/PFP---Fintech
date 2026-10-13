@@ -113,3 +113,11 @@ footer { padding: 16px 40px 28px; color: var(--muted); font-size: 11px; }
 @media (max-width: 1100px) { .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .dashboard-charts { grid-template-columns: 1fr; } .metric-card, .dashboard-panel { padding: 18px; } .dashboard-filter input { width: auto; } }
 @media (max-width: 400px) { .metric-grid { grid-template-columns: 1fr; } }
+
+.finance-form-panel { padding: 24px; margin-bottom: 24px; }
+.finance-form-panel h2 { font-size: 18px; margin: 0 0 20px; }
+.finance-form { display: flex; flex-direction: column; gap: 10px; max-width: 500px; }
+.finance-form label { font-size: 13px; font-weight: 600; }
+.finance-form input, .finance-form select { width: 100%; }
+.finance-form select { padding: 11px 14px; background: #f8faf6; border: 1px solid var(--border); border-radius: 8px; color: var(--foreground); font: inherit; }
+.finance-form .button { margin-top: 12px; }

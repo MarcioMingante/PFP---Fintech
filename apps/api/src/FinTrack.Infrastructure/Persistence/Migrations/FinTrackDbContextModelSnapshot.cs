@@ -344,7 +344,7 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("occurred_on");
 
-                    b.Property<Guid>("RecurringTransactionId")
+                    b.Property<Guid?>("RecurringTransactionId")
                         .HasColumnType("uuid")
                         .HasColumnName("recurring_transaction_id");
 
@@ -534,8 +534,7 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                     b.HasOne("FinTrack.Domain.Recurring.RecurringTransaction", null)
                         .WithMany()
                         .HasForeignKey("RecurringTransactionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("FinTrack.Domain.Users.User", null)
                         .WithMany()

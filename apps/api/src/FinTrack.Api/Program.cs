@@ -37,6 +37,8 @@ using FinTrack.Application.Recurring;
 
 using FinTrack.Application.Dashboard;
 
+using FinTrack.Application.Transactions;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -54,6 +56,7 @@ if (!migrating)
 }
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<RecurringTransactionService>();
+builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<PurchaseService>();
@@ -441,6 +444,14 @@ recurring.MapPost("/generate", async (GenerateRecurringTransactionsRequest reque
 });
 app.MapGet("/transactions", async (RecurringTransactionService service, CancellationToken cancellationToken)
     => Results.Ok(await service.ListTransactionsAsync(cancellationToken))).RequireAuthorization();
+
+app.MapPost("/transactions", async (CreateTransactionCommand request, TransactionService service, CancellationToken cancellationToken) =>
+{
+    var errors = service.Validate(request);
+    if (errors.Count > 0) return Results.ValidationProblem(errors);
+    var transaction = await service.CreateAsync(request, cancellationToken);
+    return transaction is null ? Results.NotFound() : Results.Created("/transactions", transaction);
+}).RequireAuthorization();
 
 app.MapGet("/dashboard/summary", async (DateOnly? asOf, DashboardService service, CancellationToken cancellationToken) =>
 {
