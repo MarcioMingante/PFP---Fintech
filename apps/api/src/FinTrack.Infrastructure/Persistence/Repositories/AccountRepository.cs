@@ -57,6 +57,12 @@ public sealed class AccountRepository(FinTrackDbContext dbContext) : IAccountRep
   {
     dbContext.Accounts.Remove(account);
 
-    await dbContext.SaveChangesAsync(cancellationToken);
+    try { await dbContext.SaveChangesAsync(cancellationToken); }
+    catch (DbUpdateException exception) when (exception.InnerException is Npgsql.PostgresException
+        { SqlState: Npgsql.PostgresErrorCodes.ForeignKeyViolation })
+    {
+      throw new AccountInUseException(exception);
+    }
+
   }
 }

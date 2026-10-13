@@ -1248,6 +1248,24 @@ Esse módulo vai ser um dos maiores diferenciais do projeto.
 
 # Fase 17 — Recurring Transactions
 
+## Execução no repositório
+
+- [x] Recorrências mensais de receitas/despesas com conta e categoria opcional.
+- [x] Valor decimal, início, término inclusivo, checkpoint e desativação.
+- [x] Calendário preservando dia original após meses curtos e anos bissextos.
+- [x] Cadastro/listagem/consulta/desativação protegidos por usuário.
+- [x] Geração manual periódica até data inclusiva, sem lançamentos futuros.
+- [x] Recuperação limitada a 120 ocorrências por template/lote, com `hasMore`.
+- [x] Transação atômica, bloqueio por usuário e índice único por ocorrência.
+- [x] Base mínima Transaction e GET `/transactions` para lançamentos gerados.
+- [x] Migration, documentação e decisão de arquitetura 013.
+- [x] 147 testes backend passaram, nenhum ignorado, incluindo PostgreSQL real.
+
+Entrega cobre backend e processamento mensal inicial. Agendamento automático
+aguarda fase 22; interface, CRUD manual, transferências e saldo incremental
+continuam pendentes. Base gerada não conclui módulo completo da fase 6.
+
+
 Exemplo:
 
 ```text

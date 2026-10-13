@@ -15,6 +15,9 @@ public sealed class FinTrackDbContext(
 
   public DbSet<FinTrack.Domain.Invoices.CreditCardInvoice> CreditCardInvoices => Set<FinTrack.Domain.Invoices.CreditCardInvoice>();
 
+  public DbSet<FinTrack.Domain.Recurring.RecurringTransaction> RecurringTransactions => Set<FinTrack.Domain.Recurring.RecurringTransaction>();
+  public DbSet<FinTrack.Domain.Transactions.Transaction> Transactions => Set<FinTrack.Domain.Transactions.Transaction>();
+
   public DbSet<Account> Accounts => Set<Account>();
 
   public DbSet<Category> Categories => Set<Category>();
@@ -29,6 +32,8 @@ public sealed class FinTrackDbContext(
     modelBuilder.Entity<FinTrack.Domain.Purchases.Purchase>().HasQueryFilter(purchase => CurrentUserId != null && purchase.UserId == CurrentUserId);
     modelBuilder.Entity<FinTrack.Domain.Purchases.Installment>().HasQueryFilter(installment => Purchases.Any(purchase => purchase.Id == installment.PurchaseId));
     modelBuilder.Entity<FinTrack.Domain.Invoices.CreditCardInvoice>().HasQueryFilter(invoice => CurrentUserId != null && invoice.UserId == CurrentUserId);
+    modelBuilder.Entity<FinTrack.Domain.Recurring.RecurringTransaction>().HasQueryFilter(item => CurrentUserId != null && item.UserId == CurrentUserId);
+    modelBuilder.Entity<FinTrack.Domain.Transactions.Transaction>().HasQueryFilter(item => CurrentUserId != null && item.UserId == CurrentUserId);
     modelBuilder.Entity<Account>().HasQueryFilter(account => CurrentUserId != null && account.UserId == CurrentUserId);
     modelBuilder.Entity<Category>().HasQueryFilter(category => CurrentUserId != null && category.UserId == CurrentUserId);
     modelBuilder.ApplyConfigurationsFromAssembly(typeof(FinTrackDbContext).Assembly);

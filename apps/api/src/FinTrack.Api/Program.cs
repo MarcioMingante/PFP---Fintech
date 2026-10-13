@@ -33,6 +33,8 @@ using FinTrack.Application.Purchases;
 
 using FinTrack.Application.Invoices;
 
+using FinTrack.Application.Recurring;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -49,6 +51,7 @@ if (!migrating)
     });
 }
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<RecurringTransactionService>();
 builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<PurchaseService>();
 builder.Services.AddScoped<CreatePurchaseCommandValidator>();
@@ -232,10 +235,10 @@ accounts.MapDelete(
     {
         var command = new DeleteAccountCommand(id);
 
-        var deleted = await handler.HandleAsync(
-            command,
-            cancellationToken
-        );
+        bool deleted;
+        try { deleted = await handler.HandleAsync(command, cancellationToken); }
+        catch (FinTrack.Application.Accounts.AccountInUseException exception)
+        { return Results.Conflict(new { message = exception.Message }); }
 
         if (!deleted)
         {
@@ -405,6 +408,36 @@ creditCards.MapGet("/{id:guid}/invoices/{invoiceId:guid}", async (Guid id, Guid 
     var invoice = (await service.ListAsync(id, cancellationToken))?.FirstOrDefault(item => item.Id == invoiceId);
     return invoice is null ? Results.NotFound() : Results.Ok(invoice);
 });
+
+var recurring = app.MapGroup("/recurring-transactions").RequireAuthorization();
+recurring.MapPost("", async (CreateRecurringTransactionCommand request, RecurringTransactionService service, CancellationToken cancellationToken) =>
+{
+    var errors = RecurringTransactionService.Validate(request);
+    if (errors.Count > 0) return Results.ValidationProblem(errors);
+    var item = await service.CreateAsync(request, cancellationToken);
+    return item is null ? Results.NotFound() : Results.Created($"/recurring-transactions/{item.Id}", item);
+});
+recurring.MapGet("", async (RecurringTransactionService service, CancellationToken cancellationToken)
+    => Results.Ok(await service.ListAsync(cancellationToken)));
+recurring.MapGet("/{id:guid}", async (Guid id, RecurringTransactionService service, CancellationToken cancellationToken) =>
+{
+    var item = await service.GetAsync(id, cancellationToken);
+    return item is null ? Results.NotFound() : Results.Ok(item);
+});
+recurring.MapPost("/{id:guid}/deactivate", async (Guid id, RecurringTransactionService service, CancellationToken cancellationToken) =>
+{
+    var item = await service.DeactivateAsync(id, cancellationToken);
+    return item is null ? Results.NotFound() : Results.Ok(item);
+});
+recurring.MapPost("/generate", async (GenerateRecurringTransactionsRequest request, RecurringTransactionService service, CancellationToken cancellationToken) =>
+{
+    var throughDate = request.ThroughDate ?? service.Today;
+    var errors = service.ValidateThroughDate(throughDate);
+    if (errors.Count > 0) return Results.ValidationProblem(errors);
+    return Results.Ok(await service.GenerateAsync(throughDate, cancellationToken));
+});
+app.MapGet("/transactions", async (RecurringTransactionService service, CancellationToken cancellationToken)
+    => Results.Ok(await service.ListTransactionsAsync(cancellationToken))).RequireAuthorization();
 
 categories.MapPost(
     "",

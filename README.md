@@ -93,8 +93,9 @@ a suíte quando variável está configurada. Sem `FINTRACK_TEST_DATABASE`, teste
 PostgreSQL aparecem como ignorados; demais testes continuam executando.
 Não configure credenciais do banco pessoal ou de produção.
 
-Transactions e transferências da fase 6 ainda não existem neste repositório.
-Seus testes de domínio, saldo e atomicidade deverão acompanhar implementação.
+Base de Transactions para receitas/despesas recorrentes existe na fase 17.
+CRUD manual, transferências e saldo incremental da fase 6 permanecem pendentes;
+seus testes de domínio e atomicidade deverão acompanhar implementação.
 Testcontainers permanece previsto para fase 19.
 
 ## Fase 8 — API em Docker
@@ -135,8 +136,8 @@ porta padrão; pare serviço `api` ou configure outra `API_PORT` antes de execut
 ambas. `docker compose down` preserva volume PostgreSQL; dados persistem entre
 execuções. Para diagnóstico: `docker compose ps` e `docker compose logs`.
 
-Dockerização cobre módulos atuais de contas e categorias. Transações continuam
-pendentes da fase 6.
+Dockerização cobre módulos atuais do backend. Transações geradas por
+recorrências estão na fase 17; módulo completo da fase 6 permanece pendente.
 
 ## Fase 9 — Frontend Skeleton
 
@@ -169,7 +170,7 @@ de acentos/maiúsculas. Lista vazia e busca sem resultados têm mensagens própr
 botão de nova tentativa. API indisponível não é apresentada como lista vazia.
 `not-found.tsx` trata rotas inexistentes. Dashboard inicial contém navegação
 para módulos, sem valores financeiros fictícios. Transações exibem estado
-“em breve”, pois módulo backend ainda está pendente da fase 6. Formulários de
+“em breve”: integração web com lançamentos recorrentes ainda está pendente. Formulários de
 cadastro/edição, exclusão e integração de escrita pertencem à fase 10.
 
 Validação no diretório `apps/web`:
@@ -393,7 +394,8 @@ reservado a futuras políticas de permissão; nesta fase não existem papéis.
 Dados anteriores são preservados com `user_id` nulo e ficam **inacessíveis**
 a usuários novos. Nenhum registro é atribuído automaticamente. Recuperação
 exige atribuição explícita ao usuário correto após revisão de titularidade.
-Transações ainda não existem; deverão seguir o mesmo isolamento quando criadas.
+Transações geradas por recorrências seguem o mesmo isolamento na fase 17.
+Futuros lançamentos manuais e transferências deverão manter essa política.
 
 ### Validação
 
@@ -515,3 +517,65 @@ valores e datas. Use workflow de migrations local/Docker já documentado.
 Testes PostgreSQL validam atualização com dados da fase 15 e concorrência.
 Detalhes em [012 — Faturas](docs/decisions/012-credit-card-invoices.md).
 Interface de faturas, pagamentos e integração com saldos permanecem pendentes.
+
+### Transações recorrentes — fase 17
+
+Endpoints autenticados:
+
+```text
+POST /recurring-transactions
+GET  /recurring-transactions
+GET  /recurring-transactions/{id}
+POST /recurring-transactions/{id}/deactivate
+POST /recurring-transactions/generate
+GET  /transactions
+```
+
+Cadastro mensal (substitua `accountId` por conta do usuário autenticado):
+
+```json
+{
+  "accountId": "9de59d5c-ae9f-49b7-ae42-4a9956d7c166",
+  "categoryId": null,
+  "description": "Netflix",
+  "amount": 59.90,
+  "type": "Expense",
+  "startDate": "2026-01-31",
+  "endDate": null
+}
+```
+
+`type` aceita `Income`/`Expense`; frequência é `Monthly`. Valor positivo com
+até duas casas decimais; descrição até 200 caracteres. Conta e categoria
+opcional devem pertencer ao usuário. POST retorna 201 e recurso com
+`frequency`, `isActive` e `nextOccurrenceDate`. Referência inacessível retorna
+404; entrada inválida, 400.
+
+Geração periódica inicial é explícita:
+
+```http
+POST /recurring-transactions/generate
+Content-Type: application/json
+
+{"throughDate":"2026-03-31"}
+```
+
+Exemplo gera 31/01, 28/02 e 31/03, preservando dia original nos meses seguintes.
+`endDate` é inclusiva. Data de geração não pode ser futura; `throughDate: null`
+ou corpo `{}` usam hoje em UTC. Resposta contém `throughDate`, `generatedCount`
+e `hasMore`. Cada chamada recupera até 120 ocorrências por recorrência; repita
+se `hasMore` for verdadeiro. Reenvios não duplicam ocorrências já persistidas.
+
+Desativação usa POST sem corpo, retorna 200 e preserva histórico. Conta com
+recorrências/lançamentos retorna 409 ao excluir. Templates não possuem edição
+ou reativação; alterações exigem desativar anterior e cadastrar novo.
+
+`GET /transactions` lista receitas/despesas geradas, com IDs de conta,
+categoria, recorrência e data. Não executa geração. CRUD manual, transferências,
+saldo incremental, interface e agendamento automático permanecem pendentes.
+Jobs automáticos entram na fase 22; nesta fase, use geração manual periódica.
+
+Migration `AddRecurringTransactions` cria templates, lançamentos, FKs,
+constraints e índice único por recorrência/data. Testes PostgreSQL cobrem
+concorrência e recuperação de meses pendentes. Decisões em
+[013 — Recorrências](docs/decisions/013-recurring-transactions.md).
