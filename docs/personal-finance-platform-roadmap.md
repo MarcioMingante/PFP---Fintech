@@ -595,6 +595,17 @@ Tudo ou nada
 
 # Fase 7 — Testes desde cedo
 
+## Execução no repositório
+
+- [x] Testes unitários de contas, categorias, validadores e handlers.
+- [x] Integração API/PostgreSQL real com banco isolado e migrations.
+- [x] Cobertura HTTP de persistência, validação, 404 e exclusão de conta.
+- [x] Instruções de execução e política de testes para novas features no README.
+- [ ] TransactionTests e TransferTests: dependem da implementação ainda ausente da fase 6.
+
+Base de testes implementada para módulos existentes. Fase 7 permanece com
+pendência de transações/transferências; Testcontainers reservado para fase 19.
+
 Os testes não ficam mais apenas no final.
 
 A partir dessa fase, toda nova feature importante deve ter testes.
