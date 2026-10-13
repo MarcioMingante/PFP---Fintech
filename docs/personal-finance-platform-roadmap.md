@@ -1116,6 +1116,24 @@ Nunca use `float` para dinheiro.
 
 # Fase 15 — Installments
 
+## Execução no repositório
+
+- [x] Purchase e Installment com valores decimal e parcelas imutáveis.
+- [x] Geração de 1–120 parcelas com soma exata e distribuição de centavos.
+- [x] Calendário com fechamento, vencimento, meses curtos e anos bissextos.
+- [x] Snapshot dos dias do cartão preservando calendário histórico.
+- [x] POST/GET autenticados em `/credit-cards/{id}/purchases`.
+- [x] Idempotência por cartão/chave, incluindo requisições concorrentes.
+- [x] Gravação atômica, FK de propriedade e bloqueio de exclusão de cartão com compras.
+- [x] Migration AddPurchasesAndInstallments e decisão de arquitetura 011.
+- [x] 122 testes backend passaram, nenhum ignorado, incluindo PostgreSQL real.
+
+Compra no dia do fechamento entra no ciclo seguinte. Dias inexistentes ajustam
+ao último dia do mês; vencimento é estritamente posterior ao fechamento.
+Faturas e limite disponível aguardam fase 16. Interface de compras permanece
+pendente; entrega cobre backend e regras financeiras desta fase.
+
+
 Agora:
 
 ```text

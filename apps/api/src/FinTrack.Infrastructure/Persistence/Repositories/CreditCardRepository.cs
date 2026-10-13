@@ -57,6 +57,12 @@ public sealed class CreditCardRepository(FinTrackDbContext dbContext) : ICreditC
   {
     dbContext.CreditCards.Remove(creditCard);
 
-    await dbContext.SaveChangesAsync(cancellationToken);
+    try { await dbContext.SaveChangesAsync(cancellationToken); }
+    catch (DbUpdateException exception) when (exception.InnerException is Npgsql.PostgresException
+        { SqlState: Npgsql.PostgresErrorCodes.ForeignKeyViolation })
+    {
+      throw new InvalidOperationException("Cartão com compras não pode ser excluído.", exception);
+    }
+
   }
 }

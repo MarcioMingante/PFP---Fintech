@@ -440,5 +440,46 @@ mesmo workflow de migrations local/Docker documentado acima. Testes usam
 `FINTRACK_TEST_DATABASE` e banco isolado. Decisões em
 [010 — Cartões de crédito](docs/decisions/010-credit-cards.md).
 
-Fase cobre backend. Compras, parcelas, faturas e cálculo de limite disponível
-pertencem às fases seguintes; interface de cartões ainda não implementada.
+Fase cobre backend. Compras e parcelas disponíveis na fase 15 abaixo; faturas e
+cálculo de limite disponível aguardam fase 16. Interface de cartões pendente.
+
+### Compras parceladas — fase 15
+
+Endpoints autenticados:
+
+```text
+POST /credit-cards/{id}/purchases
+GET  /credit-cards/{id}/purchases
+```
+
+Exemplo de POST (gere chave nova para cada compra; preserve-a em reenvios):
+
+```json
+{
+  "description": "Notebook",
+  "amount": 1200.00,
+  "installmentCount": 4,
+  "purchaseDate": "2026-01-24",
+  "idempotencyKey": "9de59d5c-ae9f-49b7-ae42-4a9956d7c166"
+}
+```
+
+Retorna compra com `id`, `creditCardId`, descrição, valor, quantidade, data e
+`installments`: cada parcela possui `id`, `number`, `amount`, `closingDate` e
+`dueDate`. Para fechamento 25 e vencimento 5, exemplo gera quatro parcelas de
+R$300, vencendo em 05/02, 05/03, 05/04 e 05/05. Compra em 25/01 começa em 05/03.
+
+Valores positivos, até duas casas decimais; 1–120 parcelas com pelo menos um
+centavo cada. Centavos restantes são distribuídos nas primeiras parcelas.
+Dias inexistentes ajustam ao último dia do mês. Datas existentes permanecem
+quando cartão muda. Detalhes em
+[011 — Compras parceladas](docs/decisions/011-installment-purchases.md).
+
+Primeiro POST retorna 201; reenvio idêntico com mesma chave retorna 200; chave
+reutilizada com outro conteúdo retorna 409. Validação retorna 400; cartão
+inexistente ou de outro usuário retorna 404. Cartão com compras não pode ser
+excluído (409). GET retorna compras e parcelas persistidas do cartão.
+
+Migration `AddPurchasesAndInstallments` usa workflow de migrations existente.
+Testes PostgreSQL incluem reenvios concorrentes. Faturas, cálculo de limite
+disponível e interface de compras permanecem para evolução posterior.

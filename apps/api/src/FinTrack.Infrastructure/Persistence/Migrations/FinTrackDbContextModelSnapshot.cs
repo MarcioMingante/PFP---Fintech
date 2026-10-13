@@ -114,6 +114,94 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FinTrack.Domain.Purchases.Installment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateOnly>("ClosingDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("PurchaseId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PurchaseId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("installments", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_installments_amount", "\"Amount\" > 0");
+
+                            t.HasCheckConstraint("ck_installments_dates", "\"DueDate\" > \"ClosingDate\"");
+
+                            t.HasCheckConstraint("ck_installments_number", "\"Number\" BETWEEN 1 AND 120");
+                        });
+                });
+
+            modelBuilder.Entity("FinTrack.Domain.Purchases.Purchase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("ClosingDay")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("CreditCardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("DueDay")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("IdempotencyKey")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("InstallmentCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly>("PurchaseDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditCardId", "IdempotencyKey")
+                        .IsUnique();
+
+                    b.HasIndex("CreditCardId", "UserId");
+
+                    b.ToTable("purchases", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_purchases_amount", "\"Amount\" > 0");
+
+                            t.HasCheckConstraint("ck_purchases_count", "\"InstallmentCount\" BETWEEN 1 AND 120");
+                        });
+                });
+
             modelBuilder.Entity("FinTrack.Domain.Users.RefreshSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -200,6 +288,25 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("FinTrack.Domain.Purchases.Installment", b =>
+                {
+                    b.HasOne("FinTrack.Domain.Purchases.Purchase", null)
+                        .WithMany("Installments")
+                        .HasForeignKey("PurchaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FinTrack.Domain.Purchases.Purchase", b =>
+                {
+                    b.HasOne("FinTrack.Domain.CreditCards.CreditCard", null)
+                        .WithMany()
+                        .HasForeignKey("CreditCardId", "UserId")
+                        .HasPrincipalKey("Id", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FinTrack.Domain.Users.RefreshSession", b =>
                 {
                     b.HasOne("FinTrack.Domain.Users.User", null)
@@ -207,6 +314,11 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FinTrack.Domain.Purchases.Purchase", b =>
+                {
+                    b.Navigation("Installments");
                 });
 #pragma warning restore 612, 618
         }

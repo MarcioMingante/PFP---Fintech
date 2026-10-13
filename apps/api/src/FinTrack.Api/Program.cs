@@ -29,6 +29,8 @@ using FinTrack.Application.Categories.Queries.ListCategories;
 using FinTrack.Application.Categories.Queries.GetCategory;
 using FinTrack.Application.Categories.Commands.UpdateCategory;
 
+using FinTrack.Application.Purchases;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -44,6 +46,8 @@ if (!migrating)
             _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue("Auth:RequestsPerMinute", 20), Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     });
 }
+builder.Services.AddScoped<PurchaseService>();
+builder.Services.AddScoped<CreatePurchaseCommandValidator>();
 builder.Services.AddScoped<CreateCreditCardHandler>();
 builder.Services.AddScoped<CreateCreditCardCommandValidator>();
 builder.Services.AddScoped<ListCreditCardsHandler>();
@@ -346,10 +350,10 @@ creditCards.MapDelete(
     {
         var command = new DeleteCreditCardCommand(id);
 
-        var deleted = await handler.HandleAsync(
-            command,
-            cancellationToken
-        );
+        bool deleted;
+        try { deleted = await handler.HandleAsync(command, cancellationToken); }
+        catch (InvalidOperationException exception) when (exception.Message == "Cartão com compras não pode ser excluído.")
+        { return Results.Conflict(new { message = exception.Message }); }
 
         if (!deleted)
         {
@@ -359,6 +363,26 @@ creditCards.MapDelete(
         return Results.NoContent();
     }
 );
+
+creditCards.MapPost("/{id:guid}/purchases", async (Guid id, CreatePurchaseCommand request,
+    PurchaseService service, CreatePurchaseCommandValidator validator, CancellationToken cancellationToken) =>
+{
+    var errors = validator.Validate(request);
+    if (errors.Count > 0) return Results.ValidationProblem(errors);
+    var result = await service.CreateAsync(id, request, cancellationToken);
+    return result.Status switch
+    {
+        PurchaseStatus.Created => Results.Created($"/credit-cards/{id}/purchases", result.Purchase),
+        PurchaseStatus.Replayed => Results.Ok(result.Purchase),
+        PurchaseStatus.NotFound => Results.NotFound(),
+        _ => Results.Conflict(new { message = "Chave de idempotência já usada com outra compra." })
+    };
+});
+creditCards.MapGet("/{id:guid}/purchases", async (Guid id, PurchaseService service, CancellationToken cancellationToken) =>
+{
+    var purchases = await service.ListAsync(id, cancellationToken);
+    return purchases is null ? Results.NotFound() : Results.Ok(purchases);
+});
 
 categories.MapPost(
     "",
