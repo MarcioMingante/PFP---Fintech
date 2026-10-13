@@ -10,6 +10,108 @@ opcionais; execução e build locais permanecem disponíveis.
 Diretrizes e fases futuras no
 [roadmap](docs/personal-finance-platform-roadmap.md#restrição-de-custo-e-publicação).
 
+## Executar ambiente completo — Fase 27
+
+Pré-requisitos: Docker Engine/Docker Desktop ativo com Compose v2 (suporte a
+`up --wait`), GNU Make e OpenSSL. Linux: usuário precisa acessar Docker sem
+erro de permissão. No Windows, execute comandos pelo WSL2 com integração Docker.
+SDK .NET e Node.js locais são necessários somente para desenvolvimento/testes;
+build completo usa containers. Primeiro build exige internet para bases e pacotes.
+
+Na raiz, após clonar repositório:
+
+```bash
+docker info
+docker compose version
+make setup
+make config-check
+make full
+make status
+```
+
+`setup` cria `.env` com senhas aleatórias PostgreSQL/RabbitMQ e chave JWT, com
+permissão 600. Se arquivo existir, preserva conteúdo; revise valores conforme
+`.env.example`. Não publique `.env` ou compartilhe saída de `docker compose config`
+sem `--quiet`: ela contém segredos. `config-check` valida sem imprimi-los.
+`full` constrói imagens, inicia serviços, aguarda healthchecks existentes e
+aplica migrations antes da API. `migrate` encerrado com código 0 é esperado.
+Collector, Jaeger e Prometheus podem levar alguns segundos adicionais para
+receber dados; healthcheck HTTP da API não comprova conexão com dependências.
+
+Abra frontend em **http://localhost:3000** e cadastre usuário na tela de registro.
+Não há conta inicial nem dados financeiros predefinidos. Depois crie conta,
+categorias e lançamentos; dashboard usa dados reais do usuário autenticado.
+
+Serviços e portas padrão, expostos somente no loopback:
+
+| Serviço | Endereço / porta | Uso |
+| --- | --- | --- |
+| Frontend | http://localhost:3000 | Interface e sessão |
+| API | http://localhost:5168/health | Disponibilidade HTTP |
+| PostgreSQL | localhost:5432 | Banco persistente |
+| Redis | localhost:6379 | Cache descartável |
+| RabbitMQ | localhost:5672 | Mensageria |
+| RabbitMQ UI | http://localhost:15672 | Usuário/senha do `.env` |
+| Collector | localhost:4317 | Entrada OTLP gRPC |
+| Jaeger | http://localhost:16686 | Traces |
+| Prometheus | http://localhost:9090 | Métricas, targets e consultas |
+
+Na rede Docker, serviços usam nomes `api`, `postgres`, `redis`, `rabbitmq` e
+`otel-collector`; não use `localhost` para comunicação entre containers.
+Para resolver conflito de portas, altere variáveis `*_PORT` do `.env` e execute
+`make full` novamente. `AUTH_COOKIE_SECURE=false` atende HTTP local. Recursos
+Redis, jobs, RabbitMQ e observabilidade já vêm configurados para stack completa;
+`BACKGROUND_JOBS_ENABLED`, `MESSAGING_ENABLED` e `OBSERVABILITY_ENABLED` controlam
+respectivos recursos. Não existem credenciais ou serviços AWS necessários.
+
+### Migrations, logs e encerramento
+
+Após atualizar código, execute `make full` para reconstruir imagens e aplicar
+migrations pendentes. Para reaplicar verificação de migrations separadamente,
+com imagem API atualizada disponível:
+
+```bash
+make migrate
+make logs
+# Ctrl+C encerra somente acompanhamento dos logs.
+make stop
+```
+
+`stop` remove containers/rede, preservando volumes. Para iniciar novamente:
+`make full`, ou `make images-run IMAGE_TAG=phase26` se essas imagens e todas as
+dependências já estiverem disponíveis. `images-run` não compila nem baixa imagens.
+
+PostgreSQL preserva usuários, sessões e dados financeiros; RabbitMQ preserva
+filas/mensagens persistentes e Prometheus guarda métricas por sete dias.
+Redis mantém somente cache em memória; Jaeger também perde traces ao reiniciar.
+Volumes são vinculados ao nome do projeto Compose. Mantenha checkout/nome do
+projeto estável; trocar nome pode abrir volumes novos e parecer perder dados.
+Não execute `docker compose down --volumes` no ambiente pessoal: apaga volumes
+e seus dados. Nenhum comando Make remove volumes. Faça backup antes de atualizar
+schema ou alterar armazenamento.
+
+### Problemas comuns
+
+- Falha de configuração: `make config-check`; complete `.env` conforme exemplo.
+  Chave JWT precisa ter pelo menos 32 bytes; senhas RabbitMQ geradas são
+  alfanuméricas, adequadas à URI AMQP.
+- Porta ocupada: pare processos locais ou altere portas no `.env`.
+- Container unhealthy ou migrations falharam: `docker compose logs --tail=100
+  postgres migrate api web rabbitmq`; corrija causa antes de repetir `make full`.
+- Alterar senha/usuário PostgreSQL no `.env` não altera banco já inicializado
+  no volume. Preserve credenciais originais ou faça alteração explícita no banco.
+- Métricas ausentes: confira Prometheus em `/targets` e logs de `otel-collector`.
+  Gere requisições na API antes de buscar traces no Jaeger (`fintrack-api`).
+
+Decisão: [023 — Entrega funcional local](docs/decisions/023-local-functional-delivery.md).
+
+Validação da fase 27: setup novo/repetido, permissão 600 e rejeição de JWT ausente
+aprovados. Compose completo isolado validou migrations, API/frontend, autenticação,
+lançamento financeiro, Redis, RabbitMQ, coleta Collector/Prometheus e UI Jaeger.
+Reaplicação de migrations e persistência de usuário/conta após down/up aprovadas.
+Containers, rede e volumes de teste removidos; ambiente pessoal preservado.
+
+
 ## Backend local
 
 Pré-requisitos: SDK .NET 10 e chave JWT configurada conforme fase 13. PostgreSQL em Docker é necessário para operações
@@ -135,7 +237,7 @@ do contexto de build. Credenciais chegam por variáveis em runtime.
 
 Dentro da rede Compose, API encontra PostgreSQL em `postgres:5432`; porta
 `POSTGRES_PORT` é usada apenas por clientes na máquina. Serviço `api` publica
-`${API_PORT:-5168}:8080`. Para manter desenvolvimento com API local:
+`127.0.0.1:${API_PORT:-5168}:8080`. Para manter desenvolvimento com API local:
 
 ```bash
 docker compose up -d postgres

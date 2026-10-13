@@ -8,8 +8,13 @@ export IMAGE_TAG
 .PHONY: help dev-db dev-migrate dev-api dev-web full status stop test-api test-integration test-fast test-e2e dev-observability
 .PHONY: ci ci-web ci-api ci-e2e ci-install ci-install-e2e
 .PHONY: images-build images-run
+.PHONY: setup config-check logs migrate
 
 help:
+	@echo "setup           Cria .env local com segredos aleatórios, sem sobrescrever"
+	@echo "config-check    Valida configuração Compose sem exibir segredos"
+	@echo "logs            Acompanha logs locais (Ctrl+C encerra acompanhamento)"
+	@echo "migrate         Aplica migrations em container, sem iniciar API/web"
 	@echo "images-build    Constrói API/frontend locais (IMAGE_TAG=local por padrão)"
 	@echo "images-run      Inicia Compose com imagens locais, sem build ou pull"
 	@echo "ci              Executa verificações equivalentes ao CI público (Docker necessário)"
@@ -46,6 +51,18 @@ dev-web:
 
 full:
 	$(COMPOSE) up --build -d --wait
+
+setup:
+	sh scripts/setup-local.sh
+
+config-check:
+	$(COMPOSE) config --quiet
+
+logs:
+	$(COMPOSE) logs --follow --tail=100
+
+migrate:
+	$(COMPOSE) run --rm migrate
 
 images-build:
 	docker build --tag fintrack-api:$(IMAGE_TAG) apps/api

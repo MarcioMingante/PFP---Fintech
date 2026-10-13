@@ -1879,6 +1879,18 @@ Entrega: outra pessoa consegue executar o projeto localmente seguindo README.
 Não provisionar Fargate, RDS, S3, Amplify ou CloudWatch. Armazenamento de arquivos,
 caso necessário, usa volume local; nenhuma funcionalidade depende de AWS.
 
+## Entrega aplicada
+
+- [x] README inicia com fluxo único de setup e execução Compose completa.
+- [x] Setup cria `.env` com segredos aleatórios sem sobrescrever arquivo existente.
+- [x] Configuração, migrations, logs, endereços e diagnóstico documentados.
+- [x] Persistência, dados voláteis e encerramento sem excluir volumes documentados.
+- [x] Portas restritas ao loopback e projetos Compose isoláveis.
+- [x] Sem AWS, GHCR ou dependência de serviços pagos.
+
+Decisão: [023 — Entrega funcional local](decisions/023-local-functional-delivery.md).
+
+
 ---
 
 # Fase 28 — Arquitetura cloud como estudo de portfólio
