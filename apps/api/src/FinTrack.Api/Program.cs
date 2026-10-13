@@ -254,3 +254,5 @@ app.MapPut(
 );
 
 app.Run();
+
+public partial class Program { }
