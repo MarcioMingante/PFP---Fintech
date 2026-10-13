@@ -574,8 +574,8 @@ ou reativação; alterações exigem desativar anterior e cadastrar novo.
 
 `GET /transactions` lista receitas/despesas geradas, com IDs de conta,
 categoria, recorrência e data. Não executa geração. CRUD manual, transferências,
-saldo incremental, interface e agendamento automático permanecem pendentes.
-Jobs automáticos entram na fase 22; nesta fase, use geração manual periódica.
+saldo incremental e interface de recorrências permanecem pendentes.
+Jobs automáticos disponíveis na fase 22 abaixo; geração manual continua disponível.
 
 Migration `AddRecurringTransactions` cria templates, lançamentos, FKs,
 constraints e índice único por recorrência/data. Testes PostgreSQL cobrem
@@ -740,3 +740,53 @@ Validação da fase 21: **161 testes backend**, incluindo 55 de integração,
 sem skips; **6 E2E** desktop/mobile com Redis ativo; build Webpack, lint,
 configuração Compose e alinhamento de migrations validados. Containers de
 teste removidos automaticamente.
+
+### Background jobs — fase 22
+
+API executa worker de recorrências quando habilitado. Compose e `make dev-api`
+ativam processamento; execução direta de `dotnet run` deixa worker desativado
+por padrão. Não executa jobs em `--migrate`.
+
+```bash
+make full
+# Local, após preparar banco/cache e migrations:
+make dev-api
+```
+
+Em `.env`, `BACKGROUND_JOBS_ENABLED` controla Compose e
+`BACKGROUND_JOBS_INTERVAL_SECONDS` define intervalo (padrão 60 segundos).
+Para habilitar manualmente na API local:
+
+```bash
+BackgroundJobs__Enabled=true BackgroundJobs__IntervalSeconds=60 \
+  dotnet run --project apps/api/src/FinTrack.Api --launch-profile http
+```
+
+Um ciclo inicia com API e repete após intervalo de conclusão. Descobre usuários
+com recorrências pendentes, gera até hoje em UTC e preserva isolamento. Cada
+ciclo processa até 100 usuários por padrão; cada recorrência gera até 120
+ocorrências por lote. Backlog continua no próximo ciclo. Datas iniciais futuras
+aguardam chegada do dia; término e regras mensais da fase 17 permanecem iguais.
+
+Configuração `BackgroundJobs` também aceita `MaxUsersPerCycle` (1–1000),
+`MaxAttempts` (1–5) e `RetryDelayMilliseconds` (50–10000). Timeout/falha transitória
+recebe retry exponencial com DbContext novo; erro permanente não é repetido no
+mesmo ciclo. Falhas são registradas e demais usuários selecionados continuam.
+Geração manual e múltiplas instâncias compartilham lock/checkpoint, sem duplicar
+ocorrências. Encerramento cancela consultas, locks e atrasos cooperativamente.
+
+Geração atualiza revisão do cache na mesma transação; próxima leitura do
+dashboard mostra novos lançamentos. Redis indisponível não impede worker.
+Faturas já são criadas com compras e resumo permanece projeção/cache: não há
+jobs redundantes para gerar faturas vazias ou armazenar totais duplicados.
+
+Nenhuma migration adicional. Testes normais/E2E mantêm worker desativado;
+cobertura específica inicia HostedService real com PostgreSQL/Redis isolados.
+Decisão em [018 — Background jobs](docs/decisions/018-recurring-background-jobs.md),
+baseada na [documentação de HostedService](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services?view=aspnetcore-10.0).
+
+
+Validação da fase 22 (escopo solicitado por AGENTS.md): 9 unitários dos jobs e
+16 integrações de jobs/recorrências/cache passaram, sem skips. Concorrência e
+rollback após escrita parcial revalidados isoladamente. Build API e configuração
+Compose validados; suíte completa e E2E não foram executados nesta fase.

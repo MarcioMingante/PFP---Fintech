@@ -26,7 +26,8 @@ public static class DependencyInjection
     services.AddScoped<FinTrack.Application.CreditCards.ICreditCardRepository, CreditCardRepository>();
     services.AddScoped<FinTrack.Application.Purchases.IPurchaseRepository, PurchaseRepository>();
     services.AddScoped<FinTrack.Application.Invoices.IInvoiceRepository, InvoiceRepository>();
-    services.AddScoped<FinTrack.Application.Recurring.IRecurringTransactionRepository, RecurringTransactionRepository>();
+    services.AddScoped<RecurringTransactionRepository>();
+    services.AddScoped<FinTrack.Application.Recurring.IRecurringTransactionRepository>(provider => provider.GetRequiredService<RecurringTransactionRepository>());
     services.AddScoped<DashboardRepository>();
     services.AddScoped<FinTrack.Application.Dashboard.IDashboardRepository, CachedDashboardRepository>();
     var cacheSettings = DashboardCacheSettings.Load(configuration);

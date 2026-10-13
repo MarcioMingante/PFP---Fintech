@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using FinTrack.Infrastructure;
+using FinTrack.Infrastructure.Jobs;
 using FinTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using FinTrack.Application.CreditCards.Commands.CreateCreditCard;
@@ -46,6 +47,7 @@ var migrating = args.Contains("--migrate", StringComparer.Ordinal);
 if (!migrating)
 {
     builder.Services.AddFinTrackAuthentication(builder.Configuration);
+    builder.Services.AddBackgroundJobs(builder.Configuration);
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

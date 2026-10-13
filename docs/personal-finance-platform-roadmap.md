@@ -1262,7 +1262,7 @@ Esse módulo vai ser um dos maiores diferenciais do projeto.
 - [x] 147 testes backend passaram, nenhum ignorado, incluindo PostgreSQL real.
 
 Entrega cobre backend e processamento mensal inicial. Agendamento automático
-aguarda fase 22; interface, CRUD manual, transferências e saldo incremental
+implementado na fase 22; transferências e saldo incremental
 continuam pendentes. Base gerada não conclui módulo completo da fase 6.
 
 
@@ -1590,6 +1590,25 @@ Distributed Cache
 ---
 
 # Fase 22 — Background Jobs
+
+## Execução no repositório
+
+- [x] BackgroundService dentro da API para geração automática de recorrências.
+- [x] Ciclo inicial e intervalo configurável, sem sobreposição na mesma instância.
+- [x] Descoberta limitada de usuários pendentes e escrita isolada por proprietário.
+- [x] Escopo/DbContext novo por tentativa e retry exponencial de falhas transitórias.
+- [x] Lock/checkpoint compartilhados com endpoint manual e múltiplas instâncias.
+- [x] Retomada de backlog, cancelamento cooperativo e isolamento de falhas.
+- [x] Revisão transacional do cache atualizada sem depender de Redis.
+- [x] Configuração local/Compose; worker ausente no modo migrations.
+- [x] Documentação e decisão de arquitetura 018, sem migration adicional.
+- [x] 9 testes unitários e 16 integrações relacionados passaram; testes alterados
+  de concorrência/rollback revalidados isoladamente, nenhum ignorado.
+
+Jobs automáticos habilitados no Compose/Makefile, opcionais na API direta.
+Faturas já são geradas com compras; resumos permanecem projeções/cache. Não
+foram criados jobs redundantes de faturas vazias ou totais duplicados.
+
 
 Agora implemente jobs.
 

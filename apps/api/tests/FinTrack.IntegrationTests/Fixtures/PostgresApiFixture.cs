@@ -19,6 +19,8 @@ public sealed class PostgresApiFixture : IAsyncLifetime
     public static readonly Guid LegacyAccountId = Guid.Parse("11111111-1111-4111-8111-111111111111");
     public static readonly Guid LegacyCardId = Guid.Parse("33333333-3333-4333-8333-333333333333");
     public string? RedisConnectionString { get; init; }
+    public bool EnableBackgroundJobs { get; init; }
+    public int BackgroundJobIntervalSeconds { get; init; } = 60;
     public int CacheTtlSeconds { get; init; } = 60;
     public Action<IServiceCollection>? ConfigureServices { get; init; }
     private PostgreSqlContainer? container;
@@ -55,6 +57,9 @@ public sealed class PostgresApiFixture : IAsyncLifetime
                 builder.UseEnvironment("Testing");
                 builder.UseSetting("Jwt:SigningKey", "test-only-signing-key-at-least-32-bytes-long");
                 builder.UseSetting("Auth:RequestsPerMinute", "200");
+                builder.UseSetting("BackgroundJobs:Enabled", EnableBackgroundJobs.ToString());
+                builder.UseSetting("BackgroundJobs:IntervalSeconds", BackgroundJobIntervalSeconds.ToString());
+                builder.UseSetting("BackgroundJobs:RetryDelayMilliseconds", "50");
                 builder.UseSetting("ConnectionStrings:Database", connectionString);
                 builder.UseSetting("DashboardCache:Enabled", (RedisConnectionString is not null).ToString());
                 builder.UseSetting("DashboardCache:TtlSeconds", CacheTtlSeconds.ToString());

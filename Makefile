@@ -26,7 +26,7 @@ dev-migrate:
 	dotnet run --project apps/api/src/FinTrack.Api --launch-profile http -- --migrate
 
 dev-api:
-	ConnectionStrings__Redis=127.0.0.1:$(REDIS_PORT) DashboardCache__Enabled=true dotnet watch --project apps/api/src/FinTrack.Api run --launch-profile http -- --urls http://localhost:$(API_PORT)
+	ConnectionStrings__Redis=127.0.0.1:$(REDIS_PORT) DashboardCache__Enabled=true BackgroundJobs__Enabled=true dotnet watch --project apps/api/src/FinTrack.Api run --launch-profile http -- --urls http://localhost:$(API_PORT)
 
 dev-web:
 	npm --prefix apps/web run dev -- --port $(WEB_PORT)

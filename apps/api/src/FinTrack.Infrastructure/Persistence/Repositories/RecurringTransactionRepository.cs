@@ -18,16 +18,15 @@ public sealed class RecurringTransactionRepository(FinTrackDbContext database) :
     public Task<RecurringTransaction?> GetAsync(Guid id, CancellationToken cancellationToken)
         => database.RecurringTransactions.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
 
-    private Task LockOwnerAsync(CancellationToken cancellationToken)
+    private Task LockOwnerAsync(Guid owner, CancellationToken cancellationToken)
     {
-        var owner = database.CurrentUserId ?? throw new UnauthorizedAccessException();
         return database.Database.ExecuteSqlInterpolatedAsync(
             $"SELECT pg_advisory_xact_lock(hashtextextended({owner.ToString()}, 0))", cancellationToken);
     }
     public async Task<RecurringTransaction?> DeactivateAsync(Guid id, CancellationToken cancellationToken)
     {
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
-        await LockOwnerAsync(cancellationToken);
+        await LockOwnerAsync(database.CurrentUserId ?? throw new UnauthorizedAccessException(), cancellationToken);
         var item = await database.RecurringTransactions.SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
         if (item is null) return null;
         item.Deactivate();
@@ -35,11 +34,15 @@ public sealed class RecurringTransactionRepository(FinTrackDbContext database) :
         await transaction.CommitAsync(cancellationToken);
         return item;
     }
-    public async Task<RecurringGenerationResult> GenerateAsync(DateOnly throughDate, CancellationToken cancellationToken)
+    public Task<RecurringGenerationResult> GenerateAsync(DateOnly throughDate, CancellationToken cancellationToken)
+        => GenerateForOwnerAsync(database.CurrentUserId ?? throw new UnauthorizedAccessException(), throughDate, cancellationToken);
+
+    internal async Task<RecurringGenerationResult> GenerateForOwnerAsync(Guid owner, DateOnly throughDate, CancellationToken cancellationToken)
     {
+        if (owner == Guid.Empty) throw new ArgumentException("Proprietário obrigatório.", nameof(owner));
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
-        await LockOwnerAsync(cancellationToken);
-        var items = await database.RecurringTransactions.Where(item => item.IsActive && item.NextOccurrenceDate <= throughDate)
+        await LockOwnerAsync(owner, cancellationToken);
+        var items = await database.RecurringTransactions.IgnoreQueryFilters().Where(item => item.UserId == owner && item.IsActive && item.NextOccurrenceDate <= throughDate)
             .OrderBy(item => item.Id).ToListAsync(cancellationToken);
         var count = 0;
         foreach (var item in items)
