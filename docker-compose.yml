@@ -1,6 +1,6 @@
 services:
   web:
-    image: fintrack-web:local
+    image: fintrack-web:${IMAGE_TAG:-local}
     build:
       context: ./apps/web
       dockerfile: Dockerfile
@@ -15,7 +15,7 @@ services:
         condition: service_healthy
 
   api:
-    image: fintrack-api:local
+    image: fintrack-api:${IMAGE_TAG:-local}
     build:
       context: ./apps/api
       dockerfile: Dockerfile
@@ -46,7 +46,7 @@ services:
         condition: service_completed_successfully
 
   migrate:
-    image: fintrack-api:local
+    image: fintrack-api:${IMAGE_TAG:-local}
     build:
       context: ./apps/api
       dockerfile: Dockerfile

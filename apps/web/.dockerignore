@@ -9,3 +9,13 @@ tests/
 *.log
 *.tsbuildinfo
 next-env.d.ts
+.next-e2e/
+e2e/
+playwright-report/
+test-results/
+**/.env
+**/.env.*
+**/*.pem
+**/*.pfx
+**/*.key
+**/*.log

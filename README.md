@@ -1,6 +1,15 @@
 # PFP---Fintech
 Personal Finance Platform
 
+Projeto de portfólio e uso pessoal, sem serviços pagos obrigatórios. Ambiente
+funcional completo executa localmente via Docker Compose; hospedagem pública
+contínua e provisionamento AWS não fazem parte da entrega. Demonstração por
+screenshots, vídeo e setup reproduzível. CI/registry públicos gratuitos são
+opcionais; execução e build locais permanecem disponíveis.
+
+Diretrizes e fases futuras no
+[roadmap](docs/personal-finance-platform-roadmap.md#restrição-de-custo-e-publicação).
+
 ## Backend local
 
 Pré-requisitos: SDK .NET 10 e chave JWT configurada conforme fase 13. PostgreSQL em Docker é necessário para operações
@@ -894,3 +903,99 @@ sem skips. Trace HTTP/PostgreSQL/outbox/producer/ambos os consumidores verificad
 configuração real do Collector confirmou trace no Jaeger e counter no Prometheus
 via OTLP. Stack temporário removido. Build API e Compose validados; suíte completa
 e E2E não executados, conforme AGENTS.md.
+
+## Fase 25 — CI sem cobrança
+
+[Workflow](.github/workflows/ci.yml) executa lint, typecheck, testes frontend,
+builds Next.js/.NET, testes unitários/arquitetura/integração e E2E Chromium
+desktop/mobile. Usa Node.js 24, SDK .NET 10 e runners padrão `ubuntu-24.04`.
+Integrações criam containers locais ao runner, sem serviços externos.
+
+Todos os jobs são ignorados em repositórios privados antes de alocar runner.
+Runners padrão públicos são gratuitos conforme [documentação do GitHub](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+Sem caches remotos, uploads de artefatos, credenciais AWS ou deploy. Resultados
+ficam nos logs; execuções antigas da mesma referência são canceladas. Workflow
+fica preparado para push, pull request e execução manual após publicação pelo
+proprietário; esta fase não publica código nem altera visibilidade/conta.
+
+Para executar verificações equivalentes localmente, inclusive em projeto privado:
+
+```bash
+make ci-install
+make ci-install-e2e
+make ci
+```
+
+Pré-requisitos: GNU Make, Node.js 24, SDK .NET 10, Docker ativo e acesso aos
+registries para baixar pacotes/imagens. Instalação das dependências de sistema
+do Chromium pode solicitar sudo. Testes usam dados descartáveis e não dependem
+do `.env` real. `make ci-web`, `make ci-api` e `make ci-e2e` executam partes
+isoladas; não rode frontend e E2E simultaneamente no mesmo checkout, pois ambos
+geram `next-env.d.ts`. `make ci` executa etapas sequencialmente e para na primeira
+falha. Relatório HTML continua disponível no E2E local sem `CI=true`.
+
+Decisão: [021 — CI público sem cobrança](docs/decisions/021-free-public-ci.md).
+
+Validação local da fase 25: lint/typecheck, builds frontend/backend e actionlint
+aprovados; 3 testes frontend, 120 unitários, 4 de arquitetura, 71 integrações e
+6 E2E aprovados, sem skips. Execução no GitHub ainda não realizada.
+
+## Fase 26 — Imagens Docker locais
+
+API e frontend têm imagens multi-stage, usuários não root e healthchecks.
+Frontend usa saída standalone e build webpack, como CI. Segredos chegam por
+variáveis em runtime; `.env`, chaves/certificados privados, logs e artefatos
+E2E ficam fora dos contextos. Não incluir dados pessoais em `public` ou
+segredos em appsettings. Nenhuma imagem foi publicada no GHCR ou outro registry.
+
+Build na raiz, com Docker ativo:
+
+```bash
+make images-build IMAGE_TAG=phase26
+docker image ls fintrack-api
+docker image ls fintrack-web
+```
+
+Cria `fintrack-api:phase26` e `fintrack-web:phase26`. Sem `IMAGE_TAG`, padrão
+é `local`, compatível com comandos anteriores. Use tags novas para preservar
+snapshots; reconstruir mesma tag substitui referência. Build baixa imagens
+base e pacotes, mas não requer `.env`, banco ativo ou credenciais reais. Bases
+e dependências podem evoluir: tag local não garante reprodução byte a byte.
+
+Para executar imagens já construídas no Compose, configure `.env` conforme
+instruções existentes, incluindo senha do banco, RabbitMQ e chave JWT. Todas
+as imagens de dependências precisam estar disponíveis localmente. Se ainda
+não estiverem, baixe-as uma vez:
+
+```bash
+docker compose pull postgres redis rabbitmq otel-collector jaeger prometheus
+make images-run IMAGE_TAG=phase26
+make status
+```
+
+`images-run` usa `--no-build --pull never`: não compila nem busca imagens
+ausentes. API e migrations usam mesma tag; frontend usa tag correspondente.
+Para selecionar versão diretamente pelo Compose, defina `IMAGE_TAG` no `.env`
+ou execute `IMAGE_TAG=phase26 docker compose up --no-build --pull never -d --wait`.
+`make full IMAGE_TAG=phase26` permanece alternativa para build e execução juntos.
+`make stop` encerra stack preservando volumes.
+
+Transporte opcional sem registry:
+
+```bash
+docker save -o /tmp/fintrack-phase26.tar fintrack-api:phase26 fintrack-web:phase26
+# No computador de destino:
+docker load -i /tmp/fintrack-phase26.tar
+```
+
+Arquivo contém imagens da aplicação; dependências Docker precisam ser obtidas
+separadamente. Não inclui volumes, banco ou `.env`; não adicionar esses dados
+ao pacote. Imagens são construídas para arquitetura do computador de origem.
+Decisão: [022 — Imagens Docker locais](docs/decisions/022-local-container-images.md).
+
+Validação da fase 26: builds Docker concluídos; tags Compose validadas. Smoke
+com PostgreSQL descartável aplicou migrations, registrou usuário de teste,
+consultou endpoint autenticado e confirmou página de login e ambos os
+healthchecks. Imagens verificadas com usuários não root e sem `.env`, chaves
+privadas, logs ou artefatos E2E em `/app`. Containers/rede temporários removidos;
+imagens locais preservadas. Nenhuma suíte não relacionada foi executada.

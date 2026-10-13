@@ -2,10 +2,19 @@ COMPOSE ?= docker compose
 API_PORT ?= 5168
 WEB_PORT ?= 3000
 REDIS_PORT ?= 6379
+IMAGE_TAG ?= local
+export IMAGE_TAG
 
 .PHONY: help dev-db dev-migrate dev-api dev-web full status stop test-api test-integration test-fast test-e2e dev-observability
+.PHONY: ci ci-web ci-api ci-e2e ci-install ci-install-e2e
+.PHONY: images-build images-run
 
 help:
+	@echo "images-build    Constrói API/frontend locais (IMAGE_TAG=local por padrão)"
+	@echo "images-run      Inicia Compose com imagens locais, sem build ou pull"
+	@echo "ci              Executa verificações equivalentes ao CI público (Docker necessário)"
+	@echo "ci-install      Instala dependências frontend pelo lockfile"
+	@echo "ci-install-e2e  Instala Chromium e dependências de sistema do Playwright"
 	@echo "dev-observability Inicia Collector, Jaeger e Prometheus locais"
 	@echo "test-e2e         Executa Playwright desktop/mobile em stack isolada"
 	@echo "test-api         Executa toda suíte backend com Testcontainers"
@@ -38,6 +47,13 @@ dev-web:
 full:
 	$(COMPOSE) up --build -d --wait
 
+images-build:
+	docker build --tag fintrack-api:$(IMAGE_TAG) apps/api
+	docker build --tag fintrack-web:$(IMAGE_TAG) apps/web
+
+images-run:
+	$(COMPOSE) up --no-build --pull never -d --wait
+
 status:
 	$(COMPOSE) ps
 
@@ -58,3 +74,31 @@ test-fast:
 
 test-e2e:
 	npm --prefix apps/web run e2e
+
+# Sequential: frontend checks and E2E both generate apps/web/next-env.d.ts.
+ci:
+	$(MAKE) ci-web
+	$(MAKE) ci-api
+	$(MAKE) ci-e2e
+
+ci-install:
+	npm --prefix apps/web ci
+
+ci-install-e2e:
+	cd apps/web && npx --no-install playwright install --with-deps chromium
+
+ci-web:
+	npm --prefix apps/web run lint
+	npm --prefix apps/web run typecheck
+	npm --prefix apps/web test
+	npm --prefix apps/web run build -- --webpack
+
+ci-api:
+	dotnet restore apps/api/FinTrack.sln
+	dotnet build apps/api/FinTrack.sln --configuration Release --no-restore -m:1
+	dotnet test apps/api/tests/FinTrack.UnitTests --configuration Release --no-build -m:1
+	dotnet test apps/api/tests/FinTrack.ArchitectureTests --configuration Release --no-build -m:1
+	dotnet test apps/api/tests/FinTrack.IntegrationTests --configuration Release --no-build -m:1
+
+ci-e2e:
+	CI=true npm --prefix apps/web run e2e

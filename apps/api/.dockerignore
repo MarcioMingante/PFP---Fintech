@@ -6,3 +6,6 @@
 **/*.log
 tests/
 .git/
+**/*.pem
+**/*.pfx
+**/*.key

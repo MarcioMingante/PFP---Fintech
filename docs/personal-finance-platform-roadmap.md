@@ -11,7 +11,8 @@ Construir uma plataforma financeira completa que sirva simultaneamente como:
 - estudo de Docker;
 - prática de testes;
 - introdução prática a System Design;
-- base para AWS, CI/CD e observabilidade.
+- estudo de arquitetura cloud, CI/CD e observabilidade;
+- uso pessoal e demonstração de portfólio, sem finalidade comercial nem serviços pagos obrigatórios.
 
 A stack principal continua:
 
@@ -31,7 +32,7 @@ Docker + Docker Compose
 Testing
 xUnit + Testcontainers + Playwright
 
-Cloud
+Cloud (estudo conceitual, sem provisionamento)
 AWS
 
 Complementos futuros
@@ -41,6 +42,29 @@ OpenTelemetry
 Terraform
 GitHub Actions
 ```
+
+## Restrição de custo e publicação
+
+O caminho obrigatório do projeto não exige mensalidades, serviços cobrados por
+consumo, créditos promocionais ou períodos de teste. Uso principal: pessoal e
+portfólio. Ambiente funcional completo executa localmente com Docker Compose.
+
+- Não provisionar AWS nem contratar banco, cache, broker ou observabilidade gerenciados.
+- Não depender de domínio pago, VPS ou hospedagem paga para concluir o portfólio.
+- Demonstração pública: README, screenshots, vídeo gravado localmente e instruções
+  reproduzíveis. Uma aplicação pública sempre ligada não é requisito de entrega.
+- CI remoto usa repositório público e runners padrão gratuitos. Se repositório
+  permanecer privado, executar verificações localmente como caminho sem cobrança.
+- Imagens públicas no GHCR são opcionais; build local continua suficiente.
+- Dados publicados em screenshots, vídeos e exemplos devem ser fictícios.
+- Antes de habilitar serviços externos, conferir condições gratuitas vigentes.
+  Se deixarem de ser gratuitas, voltar ao fluxo local, sem migração automática
+  para plano pago. Publicação de repositório/pacotes depende de decisão explícita
+  do proprietário; este planejamento não altera sua visibilidade.
+
+Referências de gratuidade, verificadas em 13/10/2026:
+[GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+e [GitHub Packages/GHCR](https://docs.github.com/en/billing/concepts/product-billing/github-packages).
 
 ---
 
@@ -1780,265 +1804,142 @@ Logs no console, traces no Jaeger e métricas no Prometheus; sem AWS nesta fase.
 
 ---
 
-# Fase 25 — CI
+# Fase 25 — CI sem cobrança
 
-Agora GitHub Actions.
+Implementar GitHub Actions somente com runners padrão em repositório público.
+Executar lint, typecheck, testes pertinentes e builds de frontend/backend;
+integrações usam containers locais ao runner, sem serviços externos.
 
-Pull Request:
+- Nenhum runner maior, assinatura ou serviço cloud no pipeline.
+- Evitar uploads de artefatos; relatórios ficam nos logs do job. Cache é opcional
+  e deve permanecer dentro da franquia gratuita vigente.
+- Se o repositório for privado, o caminho garantido sem cobrança é executar as
+  mesmas verificações localmente via Makefile. CI remoto privado é opcional,
+  condicionado às franquias e bloqueio de uso pago da conta.
+- Não criar credenciais AWS nem jobs de deploy remoto.
 
-```text
-Frontend
+Entrega: verificações reproduzíveis e CI público gratuito, quando autorizado.
 
-├── lint
-├── typecheck
-└── tests
+## Entrega aplicada
 
+- [x] GitHub Actions com runners padrão, somente em repositório público.
+- [x] Lint, typecheck, testes frontend e builds Next.js/.NET.
+- [x] Testes unitários, arquitetura, integrações Testcontainers e E2E desktop/mobile.
+- [x] Makefile com verificações locais equivalentes e instalação explícita.
+- [x] Sem cache remoto, upload de artefatos, AWS, segredos ou deploy.
+- [x] Token somente leitura, actions fixadas por SHA, timeout e cancelamento.
 
-Backend
+Decisão: [021 — CI público sem cobrança](decisions/021-free-public-ci.md).
+Workflow preparado localmente; execução remota depende de publicação pelo proprietário.
 
-├── restore
-├── build
-└── tests
-```
-
-Depois:
-
-```text
-Integration Tests
-```
-
-com PostgreSQL container.
-
-## Pipeline
-
-```text
-Push
- ↓
-Build
- ↓
-Test
- ↓
-Validate
-```
-
-Nenhum deploy ainda.
 
 ---
 
-# Fase 26 — Docker Image Registry
+# Fase 26 — Imagens Docker e registry opcional
 
-Agora pipelines começam a gerar imagens.
-
-```text
-GitHub Actions
-      │
-      ▼
-docker build
-      │
-      ▼
-Container Registry
-```
-
-Posteriormente:
+Construir imagens de API e frontend localmente. Isso basta para concluir fase.
+Opcionalmente publicar imagens **públicas** no GitHub Container Registry (GHCR),
+cujo uso público é gratuito nas condições atuais, após decisão do proprietário.
 
 ```text
-Amazon ECR
+Build local ou GitHub Actions gratuito
+      ↓
+Imagens versionadas
+      ↓
+GHCR público (opcional)
+      ↓
+Docker Compose local
 ```
+
+Não utilizar Amazon ECR. Não incluir segredos ou dados pessoais nas imagens.
+Documentar tags, build e execução; se registry deixar de ser gratuito, usar
+somente build local.
+
+## Entrega aplicada
+
+- [x] Imagens API/frontend construídas localmente com tag `phase26`.
+- [x] Makefile para build e execução sem pull/build implícitos.
+- [x] Compose usa mesma tag para API, migrations e frontend.
+- [x] Contextos excluem segredos, logs e artefatos E2E.
+- [x] Documentação de tags, execução e transporte local com save/load.
+
+GHCR excluído por decisão do proprietário; nenhuma publicação em registry.
+Decisão: [022 — Imagens Docker locais](decisions/022-local-container-images.md).
+
 
 ---
 
-# Fase 27 — AWS Foundation
+# Fase 27 — Entrega funcional local
 
-Agora cloud.
+Consolidar execução completa via Docker Compose: frontend, API, PostgreSQL,
+Redis, RabbitMQ e observabilidade já existentes. Documentar configuração,
+migrations, inicialização, encerramento e persistência.
 
-Comece simples.
-
-Backend:
-
-```text
-ECS Fargate
-```
-
-Banco:
-
-```text
-RDS PostgreSQL
-```
-
-Arquivos:
-
-```text
-S3
-```
-
-Logs:
-
-```text
-CloudWatch
-```
-
-Frontend pode inicialmente continuar separado ou ir para:
-
-```text
-Amplify
-
-ou
-
-Container
-```
-
-dependendo da decisão final.
+Entrega: outra pessoa consegue executar o projeto localmente seguindo README.
+Não provisionar Fargate, RDS, S3, Amplify ou CloudWatch. Armazenamento de arquivos,
+caso necessário, usa volume local; nenhuma funcionalidade depende de AWS.
 
 ---
 
-# Fase 28 — Arquitetura AWS completa
+# Fase 28 — Arquitetura cloud como estudo de portfólio
 
-A arquitetura pode evoluir para:
+Produzir diagrama e ADR conceituais mapeando stack local para alternativas AWS:
+ECS Fargate, RDS, ElastiCache, SQS, S3, CloudFront, ALB e CloudWatch.
 
-```text
-Internet
-   │
-   ▼
-CloudFront
-   │
-   ▼
-Frontend
-   │
-   ▼
-Application Load Balancer
-   │
-   ▼
-ECS Fargate
-   │
-   ├── RDS PostgreSQL
-   │
-   ├── ElastiCache Redis
-   │
-   └── SQS
-```
+Comparar disponibilidade, segurança, escalabilidade e custos. Explicar por que
+serviços gerenciados foram excluídos da execução pessoal sem cobrança.
 
-Monitoramento:
-
-```text
-CloudWatch
-```
-
-Tracing:
-
-```text
-OpenTelemetry
-```
+Entrega exclusivamente documental, sem criar conta, recursos ou credenciais AWS.
+Identificar claramente arquitetura como proposta, não como deploy realizado.
 
 ---
 
-# Fase 29 — SQS
+# Fase 29 — Mensageria local e comparação com SQS
 
-Aqui você pode substituir ou complementar RabbitMQ:
+Manter RabbitMQ local como implementação real. Demonstrar outbox, confirmações,
+retries, deduplicação e DLQ com testes e exemplos existentes.
 
-```text
-RabbitMQ local
-```
-
-por:
-
-```text
-SQS AWS
-```
-
-E entender diferenças.
-
-Muito importante para entrevistas:
-
-```text
-Queue vs Pub/Sub
-
-Managed broker
-
-Visibility timeout
-
-Dead Letter Queue
-
-Retry
-```
+Estudar diferenças com SQS em documentação: queue vs pub/sub, visibility timeout,
+long polling, entrega e dead letters. Não criar filas AWS nem trocar integração
+funcional por dependência de serviço pago.
 
 ---
 
-# Fase 30 — Terraform
+# Fase 30 — Infrastructure as Code local
 
-Agora finalmente IaC.
+Docker Compose continua definição executável do ambiente. Para praticar Terraform,
+criar exercício opcional isolado com provider Docker e containers descartáveis
+locais; não gerenciar os mesmos recursos simultaneamente com Compose.
 
-Terraform cria:
+Estudar providers, resources, modules, state, plan, apply e destroy. Estado local
+não entra no Git. Não usar backend remoto pago, Terraform cloud pago ou provider
+AWS no caminho executável.
 
-```text
-VPC
-
-ECS
-
-RDS
-
-SQS
-
-Redis
-
-Security Groups
-
-IAM
-
-CloudWatch
-```
-
-Estrutura:
-
-```text
-infrastructure/
-
-├── docker/
-│
-└── terraform/
-    ├── modules/
-    ├── environments/
-    │   ├── dev/
-    │   └── prod/
-    └── main.tf
-```
-
-## Estudar
-
-```text
-Infrastructure as Code
-
-State
-
-Provider
-
-Resource
-
-Module
-
-Plan
-
-Apply
-```
+Entrega: exemplo local reproduzível, sem credenciais cloud. Arquitetura AWS da
+fase 28 permanece documental; nenhum `apply` provisiona serviços externos.
 
 ---
 
-# Fase 31 — CD
-
-Agora:
+# Fase 31 — Release e entrega local
 
 ```text
-Merge main
+Tag de versão
    ↓
-Tests
+Verificações gratuitas
    ↓
-Build Docker Image
+Build de imagens
    ↓
-Push ECR
+GHCR público (opcional)
    ↓
-Deploy ECS
+Atualização manual do ambiente local
 ```
 
-Pipeline completo.
+Documentar release, atualização, migrations, backup local e retorno à versão
+anterior quando compatível. Não conectar runner hospedado ao computador pessoal
+para deploy automático. Não fazer push ECR ou deploy ECS.
+
+Entrega de portfólio: release versionada, screenshots, vídeo demonstrativo e
+instruções para executar stack. Hospedagem pública contínua não é requisito.
 
 ---
 
@@ -2063,7 +1964,7 @@ Exemplos:
 
 007-rabbitmq.md
 
-008-aws-ecs.md
+008-cloud-conceptual.md
 ```
 
 Formato:
@@ -2107,11 +2008,11 @@ API documentation
 
 System design decisions
 
-Cloud architecture
+Cloud architecture (conceptual, not deployed)
 
 Screenshots
 
-Demo
+Demo (screenshots, recorded video and local setup)
 
 Roadmap
 ```
@@ -2185,15 +2086,17 @@ RabbitMQ
       ↓
 Observability
       ↓
-CI
+CI gratuito / verificações locais
       ↓
-AWS
+Release local
       ↓
-SQS
+Cloud conceitual
       ↓
-Terraform
+RabbitMQ / estudo de SQS
       ↓
-CD
+IaC local
+      ↓
+Entrega local versionada
       ↓
 Portfolio Release
 ```
@@ -2217,9 +2120,9 @@ Portfolio Release
 | M10 | Redis & Background Jobs |
 | M11 | Messaging |
 | M12 | Observability |
-| M13 | CI/CD |
-| M14 | AWS |
-| M15 | Infrastructure as Code |
+| M13 | CI gratuito e releases locais |
+| M14 | Arquitetura cloud conceitual |
+| M15 | Infrastructure as Code local |
 | M16 | Portfolio Release |
 
 ---
