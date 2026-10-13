@@ -23,6 +23,7 @@ public static class DependencyInjection
 
     services.AddScoped<FinTrack.Application.CreditCards.ICreditCardRepository, CreditCardRepository>();
     services.AddScoped<FinTrack.Application.Purchases.IPurchaseRepository, PurchaseRepository>();
+    services.AddScoped<FinTrack.Application.Invoices.IInvoiceRepository, InvoiceRepository>();
     services.AddScoped<IAccountRepository, AccountRepository>();
     services.AddScoped<ICategoryRepository, CategoryRepository>();
 

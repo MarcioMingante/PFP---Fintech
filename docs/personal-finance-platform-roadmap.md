@@ -1130,7 +1130,7 @@ Nunca use `float` para dinheiro.
 
 Compra no dia do fechamento entra no ciclo seguinte. Dias inexistentes ajustam
 ao último dia do mês; vencimento é estritamente posterior ao fechamento.
-Faturas e limite disponível aguardam fase 16. Interface de compras permanece
+Faturas e limite disponível implementados na fase 16. Interface de compras permanece
 pendente; entrega cobre backend e regras financeiras desta fase.
 
 
@@ -1191,6 +1191,23 @@ Excelente parte para testes unitários.
 ---
 
 # Fase 16 — Invoices
+
+## Execução no repositório
+
+- [x] CreditCardInvoice persistida com cartão, proprietário, fechamento e vencimento.
+- [x] Parcelas vinculadas a faturas, agrupadas por cartão e datas de ciclo.
+- [x] Criação transacional e índice único para compras concorrentes/idempotentes.
+- [x] Listagem histórica e consulta de fatura com itens e totais decimais.
+- [x] Resumo de fatura atual, futuras, limite utilizado e disponível.
+- [x] Ciclo vazio projetado sem gravação; histórico preservado após editar cartão.
+- [x] Migration com backfill de parcelas existentes e FK obrigatória.
+- [x] Isolamento por usuário e documentação da política financeira.
+- [x] 130 testes backend passaram, nenhum ignorado, com PostgreSQL real.
+
+Entrega cobre backend. Limite disponível desconta todas as parcelas registradas;
+fechamento/vencimento não presumem pagamento. Quitação/pagamentos, bloqueio de
+compra por limite e interface de faturas ainda não implementados.
+
 
 Agora criamos:
 

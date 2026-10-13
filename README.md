@@ -440,8 +440,8 @@ mesmo workflow de migrations local/Docker documentado acima. Testes usam
 `FINTRACK_TEST_DATABASE` e banco isolado. Decisões em
 [010 — Cartões de crédito](docs/decisions/010-credit-cards.md).
 
-Fase cobre backend. Compras e parcelas disponíveis na fase 15 abaixo; faturas e
-cálculo de limite disponível aguardam fase 16. Interface de cartões pendente.
+Fase cobre backend. Compras e parcelas estão na fase 15 abaixo; faturas e
+limite disponível, na fase 16. Interface de cartões pendente.
 
 ### Compras parceladas — fase 15
 
@@ -466,7 +466,7 @@ Exemplo de POST (gere chave nova para cada compra; preserve-a em reenvios):
 
 Retorna compra com `id`, `creditCardId`, descrição, valor, quantidade, data e
 `installments`: cada parcela possui `id`, `number`, `amount`, `closingDate` e
-`dueDate`. Para fechamento 25 e vencimento 5, exemplo gera quatro parcelas de
+`dueDate` e `invoiceId`. Para fechamento 25 e vencimento 5, exemplo gera quatro parcelas de
 R$300, vencendo em 05/02, 05/03, 05/04 e 05/05. Compra em 25/01 começa em 05/03.
 
 Valores positivos, até duas casas decimais; 1–120 parcelas com pelo menos um
@@ -481,5 +481,37 @@ inexistente ou de outro usuário retorna 404. Cartão com compras não pode ser
 excluído (409). GET retorna compras e parcelas persistidas do cartão.
 
 Migration `AddPurchasesAndInstallments` usa workflow de migrations existente.
-Testes PostgreSQL incluem reenvios concorrentes. Faturas, cálculo de limite
-disponível e interface de compras permanecem para evolução posterior.
+Testes PostgreSQL incluem reenvios concorrentes. Faturas e cálculo de limite
+disponível implementados na fase 16 abaixo. Interface de compras pendente.
+
+### Faturas — fase 16
+
+Endpoints autenticados:
+
+```text
+GET /credit-cards/{id}/invoices
+GET /credit-cards/{id}/invoices/{invoiceId}
+GET /credit-cards/{id}/invoices/summary?asOf=2026-01-24
+```
+
+Fatura retorna `id`, `creditCardId`, `closingDate`, `dueDate`, `total` e `items`.
+Cada item identifica parcela/compra, descrição, número, quantidade e valor.
+Parcelas no mesmo cartão com as mesmas datas compartilham fatura persistida;
+respostas de compras agora incluem `invoiceId` em cada parcela.
+
+Resumo retorna `asOf`, `limit`, `usedLimit`, `availableLimit`, `currentInvoice`
+e `futureInvoices`. Data opcional controla classificação dos ciclos; padrão é
+data UTC. No fechamento, ciclo atual avança. Sem compras no ciclo atual,
+resposta projeta fatura vazia (`id: null`) sem gravar no banco. Listagem completa
+inclui faturas históricas. Mudança de calendário preserva datas existentes.
+
+Limite utilizado soma todas as parcelas registradas. Disponível é limite menos
+esse total, podendo ser negativo. Fatura fechada/vencida continua consumindo
+limite: pagamento/quitação ainda não implementados. Compras não são bloqueadas
+por excesso nesta fase. `asOf` não recalcula histórico de compras.
+
+Migration `AddCreditCardInvoices` migra parcelas existentes preservando IDs,
+valores e datas. Use workflow de migrations local/Docker já documentado.
+Testes PostgreSQL validam atualização com dados da fase 15 e concorrência.
+Detalhes em [012 — Faturas](docs/decisions/012-credit-card-invoices.md).
+Interface de faturas, pagamentos e integração com saldos permanecem pendentes.

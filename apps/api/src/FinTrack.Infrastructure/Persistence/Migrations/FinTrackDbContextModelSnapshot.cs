@@ -114,6 +114,43 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("FinTrack.Domain.Invoices.CreditCardInvoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("ClosingDate")
+                        .HasColumnType("date")
+                        .HasColumnName("closing_date");
+
+                    b.Property<Guid>("CreditCardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("credit_card_id");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditCardId", "UserId");
+
+                    b.HasIndex("CreditCardId", "ClosingDate", "DueDate")
+                        .IsUnique()
+                        .HasDatabaseName("ux_credit_card_invoices_cycle");
+
+                    b.ToTable("credit_card_invoices", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_credit_card_invoices_dates", "due_date > closing_date");
+                        });
+                });
+
             modelBuilder.Entity("FinTrack.Domain.Purchases.Installment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -130,6 +167,9 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("DueDate")
                         .HasColumnType("date");
 
+                    b.Property<Guid>("InvoiceId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Number")
                         .HasColumnType("integer");
 
@@ -137,6 +177,8 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
 
                     b.HasIndex("PurchaseId", "Number")
                         .IsUnique();
@@ -288,8 +330,24 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("FinTrack.Domain.Invoices.CreditCardInvoice", b =>
+                {
+                    b.HasOne("FinTrack.Domain.CreditCards.CreditCard", null)
+                        .WithMany()
+                        .HasForeignKey("CreditCardId", "UserId")
+                        .HasPrincipalKey("Id", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FinTrack.Domain.Purchases.Installment", b =>
                 {
+                    b.HasOne("FinTrack.Domain.Invoices.CreditCardInvoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("FinTrack.Domain.Purchases.Purchase", null)
                         .WithMany("Installments")
                         .HasForeignKey("PurchaseId")

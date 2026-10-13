@@ -31,6 +31,8 @@ using FinTrack.Application.Categories.Commands.UpdateCategory;
 
 using FinTrack.Application.Purchases;
 
+using FinTrack.Application.Invoices;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -46,6 +48,8 @@ if (!migrating)
             _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue("Auth:RequestsPerMinute", 20), Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     });
 }
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<PurchaseService>();
 builder.Services.AddScoped<CreatePurchaseCommandValidator>();
 builder.Services.AddScoped<CreateCreditCardHandler>();
@@ -382,6 +386,24 @@ creditCards.MapGet("/{id:guid}/purchases", async (Guid id, PurchaseService servi
 {
     var purchases = await service.ListAsync(id, cancellationToken);
     return purchases is null ? Results.NotFound() : Results.Ok(purchases);
+});
+
+creditCards.MapGet("/{id:guid}/invoices", async (Guid id, InvoiceService service, CancellationToken cancellationToken) =>
+{
+    var invoices = await service.ListAsync(id, cancellationToken);
+    return invoices is null ? Results.NotFound() : Results.Ok(invoices);
+});
+creditCards.MapGet("/{id:guid}/invoices/summary", async (Guid id, DateOnly? asOf, InvoiceService service, CancellationToken cancellationToken) =>
+{
+    var errors = InvoiceService.ValidateDate(asOf);
+    if (errors.Count > 0) return Results.ValidationProblem(errors);
+    var summary = await service.SummaryAsync(id, asOf, cancellationToken);
+    return summary is null ? Results.NotFound() : Results.Ok(summary);
+});
+creditCards.MapGet("/{id:guid}/invoices/{invoiceId:guid}", async (Guid id, Guid invoiceId, InvoiceService service, CancellationToken cancellationToken) =>
+{
+    var invoice = (await service.ListAsync(id, cancellationToken))?.FirstOrDefault(item => item.Id == invoiceId);
+    return invoice is null ? Results.NotFound() : Results.Ok(invoice);
 });
 
 categories.MapPost(
