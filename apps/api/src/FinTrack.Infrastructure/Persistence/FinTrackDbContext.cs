@@ -1,3 +1,5 @@
+using System.Text.Json;
+using FinTrack.Infrastructure.Messaging;
 using FinTrack.Domain.Accounts;
 using FinTrack.Domain.Users;
 using FinTrack.Application.Authentication;
@@ -43,9 +45,13 @@ public sealed class FinTrackDbContext(
       _ => (Guid?)null
     }).Where(id => id.HasValue).Select(id => id!.Value).Distinct().Order().ToArray();
 
+  private TransactionCreated[] NewEvents() => ChangeTracker.Entries<FinTrack.Domain.Transactions.Transaction>()
+    .Where(entry => entry.State == EntityState.Added).Select(entry => TransactionCreated.From(entry.Entity)).ToArray();
+
   public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
   {
     var owners = ChangedFinancialOwners();
+    var events = NewEvents();
     if (owners.Length == 0) return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     await using var transaction = Database.CurrentTransaction is null ? await Database.BeginTransactionAsync(cancellationToken) : null;
     var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
@@ -54,6 +60,8 @@ public sealed class FinTrackDbContext(
         INSERT INTO dashboard_cache_revisions (user_id, revision) VALUES ({owner}, 1)
         ON CONFLICT (user_id) DO UPDATE SET revision = dashboard_cache_revisions.revision + 1
         """, cancellationToken);
+    foreach (var item in events)
+      await Database.ExecuteSqlInterpolatedAsync($"INSERT INTO messaging_outbox (event_id, payload) VALUES ({item.EventId}, {JsonSerializer.Serialize(item)}::jsonb) ON CONFLICT DO NOTHING", cancellationToken);
     if (transaction is not null) await transaction.CommitAsync(cancellationToken);
     return result;
   }
@@ -61,6 +69,7 @@ public sealed class FinTrackDbContext(
   public override int SaveChanges(bool acceptAllChangesOnSuccess)
   {
     var owners = ChangedFinancialOwners();
+    var events = NewEvents();
     if (owners.Length == 0) return base.SaveChanges(acceptAllChangesOnSuccess);
     using var transaction = Database.CurrentTransaction is null ? Database.BeginTransaction() : null;
     var result = base.SaveChanges(acceptAllChangesOnSuccess);
@@ -69,6 +78,8 @@ public sealed class FinTrackDbContext(
         INSERT INTO dashboard_cache_revisions (user_id, revision) VALUES ({owner}, 1)
         ON CONFLICT (user_id) DO UPDATE SET revision = dashboard_cache_revisions.revision + 1
         """);
+    foreach (var item in events)
+      Database.ExecuteSqlInterpolated($"INSERT INTO messaging_outbox (event_id, payload) VALUES ({item.EventId}, {JsonSerializer.Serialize(item)}::jsonb) ON CONFLICT DO NOTHING");
     transaction?.Commit();
     return result;
   }

@@ -22,6 +22,8 @@ services:
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      Messaging__Enabled: "${MESSAGING_ENABLED:-true}"
+      ConnectionStrings__RabbitMq: "amqp://${RABBITMQ_USER:-fintrack}:${RABBITMQ_PASSWORD}@rabbitmq:5672/"
       BackgroundJobs__Enabled: "${BACKGROUND_JOBS_ENABLED:-true}"
       BackgroundJobs__IntervalSeconds: ${BACKGROUND_JOBS_INTERVAL_SECONDS:-60}
       DashboardCache__Enabled: "true"
@@ -32,6 +34,8 @@ services:
     ports:
       - "${API_PORT:-5168}:8080"
     depends_on:
+      rabbitmq:
+        condition: service_healthy
       redis:
         condition: service_healthy
       postgres:
@@ -89,5 +93,23 @@ services:
       timeout: 3s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-fintrack}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD no .env}
+    ports:
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
 volumes:
+  rabbitmq_data:
   postgres_data:

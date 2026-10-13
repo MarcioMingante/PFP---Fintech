@@ -1708,6 +1708,23 @@ Idempotency
 
 ---
 
+## Entrega aplicada
+
+- [x] TransactionCreated v1 para transações manuais e recorrentes.
+- [x] Outbox PostgreSQL atômica com escrita financeira e revisão de cache.
+- [x] Producer RabbitMQ com mensagem persistente e publisher confirms.
+- [x] Exchange fanout e duas filas quorum duráveis independentes.
+- [x] Analytics Consumer e Notification Consumer com efeitos locais persistidos.
+- [x] Idempotência por evento, ack após commit, retries e DLQs quorum.
+- [x] Reconexão, cancelamento e processamento concorrente da outbox.
+- [x] RabbitMQ no Compose, configuração local e documentação operacional.
+- [x] Testes direcionados com PostgreSQL e RabbitMQ reais.
+
+Decisão: [019 — Transaction messaging](decisions/019-transaction-messaging.md).
+Notificações locais; email/push e replay automático não incluídos nesta fase.
+
+---
+
 # Fase 24 — Observabilidade local
 
 Antes da AWS, você pode começar com:

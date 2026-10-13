@@ -10,7 +10,7 @@ help:
 	@echo "test-api         Executa toda suíte backend com Testcontainers"
 	@echo "test-integration Executa somente integração (Docker necessário)"
 	@echo "test-fast        Executa unitários e arquitetura sem Docker"
-	@echo "dev-db       Para web/API Docker e inicia PostgreSQL/Redis"
+	@echo "dev-db       Para web/API Docker e inicia PostgreSQL/Redis/RabbitMQ"
 	@echo "dev-migrate  Aplica migrations com API local e conexão configurada"
 	@echo "dev-api      Executa API local com dotnet watch"
 	@echo "dev-web      Executa Next.js local com npm run dev"
@@ -20,7 +20,7 @@ help:
 
 dev-db:
 	$(COMPOSE) stop web api
-	$(COMPOSE) up -d --wait postgres redis
+	$(COMPOSE) up -d --wait postgres redis rabbitmq
 
 dev-migrate:
 	dotnet run --project apps/api/src/FinTrack.Api --launch-profile http -- --migrate

@@ -790,3 +790,49 @@ Validação da fase 22 (escopo solicitado por AGENTS.md): 9 unitários dos jobs 
 16 integrações de jobs/recorrências/cache passaram, sem skips. Concorrência e
 rollback após escrita parcial revalidados isoladamente. Build API e configuração
 Compose validados; suíte completa e E2E não foram executados nesta fase.
+
+### Messaging — fase 23
+
+`TransactionCreated` v1 alimenta Analytics Consumer e Notification Consumer via
+RabbitMQ. Transações manuais e recorrentes gravam evento na mesma transação do
+banco (outbox), mesmo com broker offline. Eventos de transações anteriores à
+migration não são recriados. Aplicar migrations antes de iniciar API atualizada.
+
+Configure `RABBITMQ_PASSWORD` no `.env` com senha local própria, alfanumérica;
+`make full` inicia RabbitMQ e habilita `Messaging`. `make dev-db` inicia também
+broker. Management UI: `http://localhost:15672`, usuário `RABBITMQ_USER` e senha
+configurada. Portas AMQP/management são publicadas somente no loopback.
+Dados RabbitMQ persistem em volume; `make stop` preserva filas.
+
+API local mantém mensageria desativada por padrão. Para habilitar, exporte
+`Messaging__Enabled=true` e `ConnectionStrings__RabbitMq` com URI
+`amqp://usuario:senha@127.0.0.1:5672/` antes de `make dev-api`. Credenciais com
+caracteres especiais precisam de percent-encoding na URI. Compose controla
+ativação por `MESSAGING_ENABLED`; migration não inicia mensageria.
+
+Exchange fanout `fintrack.transaction-created.v1` publica nas filas quorum
+`fintrack.analytics.v1` e `fintrack.notifications.v1`. Mensagens persistentes,
+confirmações de publicação, ack após escrita e deduplicação no PostgreSQL
+protegem entrega. Falhas recebem três tentativas por entrega; payload inválido
+vai diretamente à DLQ `<fila>.dead`. DLQs usam dead-lettering at-least-once.
+Queda de conexão devolve mensagens sem ack; serviço reconecta automaticamente.
+
+Analytics persiste projeção por evento em `transaction_analytics`; Notification
+persiste registro local em `transaction_notifications`. Não há email/push nem
+nova interface pública nesta fase. Dashboard permanece baseado em transações.
+Projeções são eventualmente consistentes; broker offline acumula outbox sem
+bloquear API. Publicador processa 50 eventos por ciclo; consumidores até 50 por
+fila; intervalo normal de um segundo, reconexão após dois segundos.
+
+DLQ permite investigar e republicar manualmente após corrigir causa. Replay e
+limpeza de outbox não são automáticos. Detalhes e limitações em
+[019 — Transaction messaging](docs/decisions/019-transaction-messaging.md).
+Testes comuns/E2E desativam worker; integração específica usa RabbitMQ e
+PostgreSQL reais, isolados por Testcontainers.
+
+Validação da fase 23: 5 unitários de configuração/registro e 21 integrações
+relacionadas passaram (8 de mensageria, 13 de transações/recorrências/jobs).
+Cobertura inclui fanout, duplicatas, rollback, falha de publicação, DLQ,
+falha de consumidor, ciclo/encerramento do worker, publishers concorrentes e
+SaveChanges síncrono. Build API e Compose validados; suíte completa/E2E não
+executados nesta fase, conforme AGENTS.md.

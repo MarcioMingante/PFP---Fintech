@@ -77,6 +77,7 @@ try {
   env.Jwt__SigningKey = `e2e-${randomUUID()}-${randomUUID()}`;
   env.Auth__RequestsPerMinute = "1000";
   env.BackgroundJobs__Enabled = "false";
+  env.Messaging__Enabled = "false";
   env.Logging__LogLevel__Default = "Warning";
   env.ASPNETCORE_ENVIRONMENT = "Testing";
   env.ASPNETCORE_URLS = `http://127.0.0.1:${apiPort}`;

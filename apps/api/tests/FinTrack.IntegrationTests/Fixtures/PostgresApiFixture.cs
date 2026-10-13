@@ -55,6 +55,7 @@ public sealed class PostgresApiFixture : IAsyncLifetime
             factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Testing");
+                builder.UseSetting("Messaging:Enabled", "false");
                 builder.UseSetting("Jwt:SigningKey", "test-only-signing-key-at-least-32-bytes-long");
                 builder.UseSetting("Auth:RequestsPerMinute", "200");
                 builder.UseSetting("BackgroundJobs:Enabled", EnableBackgroundJobs.ToString());

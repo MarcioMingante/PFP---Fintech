@@ -1,3 +1,4 @@
+using FinTrack.Infrastructure.Messaging;
 using FinTrack.Application.Authentication;
 using FinTrack.Infrastructure.Authentication;
 using System.Security.Claims;
@@ -48,6 +49,7 @@ if (!migrating)
 {
     builder.Services.AddFinTrackAuthentication(builder.Configuration);
     builder.Services.AddBackgroundJobs(builder.Configuration);
+    builder.Services.AddMessaging(builder.Configuration);
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
