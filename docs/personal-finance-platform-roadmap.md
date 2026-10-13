@@ -1904,6 +1904,19 @@ serviços gerenciados foram excluídos da execução pessoal sem cobrança.
 Entrega exclusivamente documental, sem criar conta, recursos ou credenciais AWS.
 Identificar claramente arquitetura como proposta, não como deploy realizado.
 
+## Entrega aplicada
+
+- [x] Diagrama Mermaid com todos os serviços AWS previstos.
+- [x] Mapeamento da stack real e limites de SSR, transporte e workers.
+- [x] Comparação de disponibilidade, segurança, escalabilidade e custos.
+- [x] Referências oficiais e justificativa para manter execução pessoal local.
+- [x] ADR conceitual; sem recursos, credenciais, deploy AWS ou GHCR.
+
+Estudo: [Arquitetura AWS conceitual](architecture/aws-conceptual.md).
+Diagrama: [Proposta AWS](diagrams/aws-conceptual.md).
+Decisão: [024 — Arquitetura AWS conceitual](decisions/024-cloud-conceptual-architecture.md).
+
+
 ---
 
 # Fase 29 — Mensageria local e comparação com SQS

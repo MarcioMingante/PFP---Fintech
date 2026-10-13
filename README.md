@@ -112,6 +112,21 @@ Reaplicação de migrations e persistência de usuário/conta após down/up apro
 Containers, rede e volumes de teste removidos; ambiente pessoal preservado.
 
 
+## Fase 28 — Arquitetura AWS conceitual
+
+**Estudo de portfólio, não implantado.** Ambiente real continua local; nenhuma
+conta, credencial ou recurso AWS foi criado. GHCR permanece fora do escopo.
+
+- [Estudo e comparação](docs/architecture/aws-conceptual.md): disponibilidade,
+  segurança, escala, dimensões de cobrança e limites da migração.
+- [Diagrama Mermaid](docs/diagrams/aws-conceptual.md): ECS Fargate, RDS,
+  ElastiCache, SQS, S3, CloudFront, ALB e CloudWatch, com complementos necessários.
+- [ADR 024](docs/decisions/024-cloud-conceptual-architecture.md): motivos para
+  manter serviços gerenciados fora da execução pessoal sem cobrança.
+
+Next.js SSR exige runtime; SQS requer adaptação do transporte. Diagrama não
+representa deploy realizado nem altera Compose, CI ou código da aplicação.
+
 ## Backend local
 
 Pré-requisitos: SDK .NET 10 e chave JWT configurada conforme fase 13. PostgreSQL em Docker é necessário para operações
