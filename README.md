@@ -235,7 +235,7 @@ Compose, SDK .NET 10 e Node.js 24. `make help` lista comandos.
 
 ### Desenvolvimento
 
-Neste modo, somente PostgreSQL executa em Docker. API e frontend executam
+Neste modo, PostgreSQL e Redis executam em Docker. API e frontend executam
 localmente com atualização automática.
 
 1. Configure `.env` da raiz com as credenciais e porta do PostgreSQL e execute:
@@ -244,9 +244,9 @@ localmente com atualização automática.
    make dev-db
    ```
 
-   Este comando para `web` e `api` do Compose antes de iniciar PostgreSQL.
+   Este comando para `web` e `api` do Compose antes de iniciar PostgreSQL/Redis.
    Volume e dados são preservados; container de migrations pode permanecer
-   listado como encerrado. Banco aguarda healthcheck antes de concluir.
+   listado como encerrado. Banco e cache aguardam healthchecks antes de concluir.
 
 2. Configure conexão da API local com User Secrets (uma vez), usando os valores
    de `.env` e **Host=localhost**, e aplique migrations:
@@ -685,3 +685,58 @@ Validação: **6 E2E** desktop/mobile, **152 backend** (50 integração), **8 fr
 lint, typecheck e build Webpack passaram. Cleanup de containers confirmado.
 Decisão em [016 — Playwright E2E](docs/decisions/016-playwright-e2e.md), com
 [configuração oficial Playwright](https://playwright.dev/docs/test-configuration).
+
+### Redis — fase 21
+
+Compose agora inicia `web`, `api`, `postgres`, `redis` e migrador provisório.
+Redis usa `redis:7-alpine`, healthcheck, memória limitada a 128 MB e porta de
+host em loopback. Cache não possui volume/persistência; PostgreSQL conserva dados.
+
+```bash
+make full
+# Desenvolvimento: banco/cache Docker; API/web locais
+make dev-db
+make dev-migrate
+make dev-api
+make dev-web
+```
+
+`REDIS_PORT` em `.env` controla porta do Compose (padrão 6379). Se mudar,
+alinhe `make REDIS_PORT=6380 dev-api` com valor configurado. TTL padrão 60s,
+configurável por `DASHBOARD_CACHE_TTL_SECONDS` no Compose (1–3600 segundos).
+
+API Docker usa `ConnectionStrings__Redis=redis:6379` e cache habilitado.
+`make dev-api` usa endereço local e habilita cache. Execução direta de
+`dotnet run` mantém cache desabilitado por padrão; para habilitar manualmente:
+
+```bash
+ConnectionStrings__Redis=127.0.0.1:6379 DashboardCache__Enabled=true \
+  dotnet run --project apps/api/src/FinTrack.Api --launch-profile http
+```
+
+Cache-aside de `/dashboard/summary`: hit retorna DTO Redis; miss executa
+agregações PostgreSQL e armazena resultado com TTL absoluto. Chave separa
+usuário, data e revisão. Hit ainda consulta revisão por índice em PostgreSQL;
+autenticação e regras financeiras permanecem no banco.
+
+Migration `AddDashboardCacheRevisions` cria revisão por usuário. Escritas
+financeiras a incrementam na mesma transação: contas, categorias, cartões,
+compras/faturas, recorrências e lançamentos. Todas as datas desse usuário são
+invalidadas por nova revisão; chaves antigas expiram. Consulta concorrente
+não consegue publicar snapshot antigo na chave da nova revisão. Invalidação
+continua funcionando quando Redis está indisponível, sem impedir escritas.
+
+Redis offline, timeout ou JSON inválido produzem fallback ao PostgreSQL.
+Falha ao salvar cache não altera resposta. Logs Debug registram hit/miss;
+warnings registram fallback. Contrato HTTP e interface do dashboard não mudam.
+
+Integração usa Redis Testcontainers próprio para hits, TTL, invalidação,
+outage, timeout e corrida entre leitura/commit. E2E também inicia Redis isolado
+e prima cache antes de criar lançamentos. Decisão em
+[017 — Redis](docs/decisions/017-redis-dashboard-cache.md), baseada no
+[cliente oficial documentado pela Redis](https://redis.io/docs/latest/develop/clients/dotnet/).
+
+Validação da fase 21: **161 testes backend**, incluindo 55 de integração,
+sem skips; **6 E2E** desktop/mobile com Redis ativo; build Webpack, lint,
+configuração Compose e alinhamento de migrations validados. Containers de
+teste removidos automaticamente.

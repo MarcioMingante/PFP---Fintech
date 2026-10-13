@@ -1,6 +1,7 @@
 COMPOSE ?= docker compose
 API_PORT ?= 5168
 WEB_PORT ?= 3000
+REDIS_PORT ?= 6379
 
 .PHONY: help dev-db dev-migrate dev-api dev-web full status stop test-api test-integration test-fast test-e2e
 
@@ -9,7 +10,7 @@ help:
 	@echo "test-api         Executa toda suíte backend com Testcontainers"
 	@echo "test-integration Executa somente integração (Docker necessário)"
 	@echo "test-fast        Executa unitários e arquitetura sem Docker"
-	@echo "dev-db       Para web/API Docker e inicia somente PostgreSQL"
+	@echo "dev-db       Para web/API Docker e inicia PostgreSQL/Redis"
 	@echo "dev-migrate  Aplica migrations com API local e conexão configurada"
 	@echo "dev-api      Executa API local com dotnet watch"
 	@echo "dev-web      Executa Next.js local com npm run dev"
@@ -19,13 +20,13 @@ help:
 
 dev-db:
 	$(COMPOSE) stop web api
-	$(COMPOSE) up -d --wait postgres
+	$(COMPOSE) up -d --wait postgres redis
 
 dev-migrate:
 	dotnet run --project apps/api/src/FinTrack.Api --launch-profile http -- --migrate
 
 dev-api:
-	dotnet watch --project apps/api/src/FinTrack.Api run --launch-profile http -- --urls http://localhost:$(API_PORT)
+	ConnectionStrings__Redis=127.0.0.1:$(REDIS_PORT) DashboardCache__Enabled=true dotnet watch --project apps/api/src/FinTrack.Api run --launch-profile http -- --urls http://localhost:$(API_PORT)
 
 dev-web:
 	npm --prefix apps/web run dev -- --port $(WEB_PORT)

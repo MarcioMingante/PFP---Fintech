@@ -438,6 +438,24 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("FinTrack.Infrastructure.Persistence.DashboardCacheRevision", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<long>("Revision")
+                        .HasColumnType("bigint")
+                        .HasColumnName("revision");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("dashboard_cache_revisions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_dashboard_cache_revision", "revision > 0");
+                        });
+                });
+
             modelBuilder.Entity("FinTrack.Domain.Accounts.Account", b =>
                 {
                     b.HasOne("FinTrack.Domain.Users.User", null)
@@ -549,6 +567,15 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FinTrack.Infrastructure.Persistence.DashboardCacheRevision", b =>
+                {
+                    b.HasOne("FinTrack.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

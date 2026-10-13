@@ -22,11 +22,16 @@ services:
     restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      DashboardCache__Enabled: "true"
+      DashboardCache__TtlSeconds: ${DASHBOARD_CACHE_TTL_SECONDS:-60}
+      ConnectionStrings__Redis: redis:6379
       Jwt__SigningKey: ${JWT_SIGNING_KEY:-}
       ConnectionStrings__Database: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
     ports:
       - "${API_PORT:-5168}:8080"
     depends_on:
+      redis:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       migrate:
@@ -68,6 +73,18 @@ services:
         ]
       interval: 5s
       timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
       retries: 5
 
 volumes:

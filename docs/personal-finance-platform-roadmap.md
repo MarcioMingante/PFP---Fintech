@@ -1513,6 +1513,24 @@ Aqui você testa o produto, não apenas código.
 
 # Fase 21 — Redis
 
+## Execução no repositório
+
+- [x] Redis 7 Alpine no Compose, healthcheck, loopback e memória limitada.
+- [x] Cache-aside do dashboard com chaves por usuário/data/revisão.
+- [x] TTL absoluto configurável, padrão 60 segundos.
+- [x] Hits evitam agregações; misses consultam PostgreSQL e preenchem Redis.
+- [x] Revisão SQL incrementada na mesma transação de escritas financeiras.
+- [x] Invalidação de todas as datas do usuário, protegida contra repopulação antiga.
+- [x] Fallback em outage, timeout e cache JSON inválido.
+- [x] Migration AddDashboardCacheRevisions e configuração local/Docker.
+- [x] Testcontainers Redis e E2E desktop/mobile com cache ativo.
+- [x] 161 testes backend passaram (55 integração), nenhum ignorado, e 6 E2E.
+
+Cache é opcional na API local direta; Compose/Makefile habilitam Redis. Hit ainda
+faz leitura indexada de revisão; PostgreSQL continua fonte de verdade. Cache
+não altera regras financeiras nem contrato/interface do dashboard.
+
+
 Agora existe motivo real para Redis.
 
 Por exemplo:

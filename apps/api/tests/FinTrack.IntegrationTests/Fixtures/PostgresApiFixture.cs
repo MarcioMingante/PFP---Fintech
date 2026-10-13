@@ -7,6 +7,7 @@ using FinTrack.Application.Authentication;
 using FinTrack.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
@@ -17,6 +18,9 @@ public sealed class PostgresApiFixture : IAsyncLifetime
 {
     public static readonly Guid LegacyAccountId = Guid.Parse("11111111-1111-4111-8111-111111111111");
     public static readonly Guid LegacyCardId = Guid.Parse("33333333-3333-4333-8333-333333333333");
+    public string? RedisConnectionString { get; init; }
+    public int CacheTtlSeconds { get; init; } = 60;
+    public Action<IServiceCollection>? ConfigureServices { get; init; }
     private PostgreSqlContainer? container;
     private WebApplicationFactory<Program>? factory;
 
@@ -52,6 +56,10 @@ public sealed class PostgresApiFixture : IAsyncLifetime
                 builder.UseSetting("Jwt:SigningKey", "test-only-signing-key-at-least-32-bytes-long");
                 builder.UseSetting("Auth:RequestsPerMinute", "200");
                 builder.UseSetting("ConnectionStrings:Database", connectionString);
+                builder.UseSetting("DashboardCache:Enabled", (RedisConnectionString is not null).ToString());
+                builder.UseSetting("DashboardCache:TtlSeconds", CacheTtlSeconds.ToString());
+                if (RedisConnectionString is not null) builder.UseSetting("ConnectionStrings:Redis", RedisConnectionString);
+                if (ConfigureServices is not null) builder.ConfigureTestServices(ConfigureServices);
             });
             using var scope = factory.Services.CreateScope();
             var database = scope.ServiceProvider.GetRequiredService<FinTrackDbContext>();

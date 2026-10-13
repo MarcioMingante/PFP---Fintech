@@ -1,3 +1,5 @@
+using FinTrack.Infrastructure.Caching;
+using StackExchange.Redis;
 using FinTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,7 +27,26 @@ public static class DependencyInjection
     services.AddScoped<FinTrack.Application.Purchases.IPurchaseRepository, PurchaseRepository>();
     services.AddScoped<FinTrack.Application.Invoices.IInvoiceRepository, InvoiceRepository>();
     services.AddScoped<FinTrack.Application.Recurring.IRecurringTransactionRepository, RecurringTransactionRepository>();
-    services.AddScoped<FinTrack.Application.Dashboard.IDashboardRepository, DashboardRepository>();
+    services.AddScoped<DashboardRepository>();
+    services.AddScoped<FinTrack.Application.Dashboard.IDashboardRepository, CachedDashboardRepository>();
+    var cacheSettings = DashboardCacheSettings.Load(configuration);
+    services.AddSingleton(cacheSettings);
+    if (cacheSettings.Enabled)
+    {
+      services.AddSingleton<IConnectionMultiplexer>(_ =>
+      {
+        var options = ConfigurationOptions.Parse(cacheSettings.ConnectionString!);
+        options.AbortOnConnectFail = false;
+        options.ConnectTimeout = 1000;
+        options.ConnectRetry = 0;
+        options.AsyncTimeout = 500;
+        options.SyncTimeout = 500;
+        options.BacklogPolicy = BacklogPolicy.FailFast;
+        return ConnectionMultiplexer.Connect(options);
+      });
+      services.AddSingleton<IDashboardCache, RedisDashboardCache>();
+    }
+    else services.AddSingleton<IDashboardCache, DisabledDashboardCache>();
     services.AddScoped<FinTrack.Application.Transactions.ITransactionRepository, TransactionRepository>();
     services.AddScoped<IAccountRepository, AccountRepository>();
     services.AddScoped<ICategoryRepository, CategoryRepository>();

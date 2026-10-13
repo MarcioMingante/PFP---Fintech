@@ -34,6 +34,8 @@ test("login, conta, receitas/despesas e dashboard com gráficos", async ({ page 
   await expect(page.getByRole("listitem").filter({ hasText: "Conta E2E" })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("listitem").filter({ hasText: "Conta E2E" })).toBeVisible();
+  await page.goto("/dashboard?asOf=2024-03-31");
+  await expect(page.locator(".metric-card").filter({ hasText: "Saldo registrado" })).toContainText("0,00");
   await page.getByRole("link", { name: "Transações", exact: true }).click();
   for (const [type, description, amount] of [["Income", "Salário E2E", "2000.00"], ["Expense", "Despesa E2E", "59.90"]]) {
     await page.getByLabel("Tipo", { exact: true }).selectOption(type);
