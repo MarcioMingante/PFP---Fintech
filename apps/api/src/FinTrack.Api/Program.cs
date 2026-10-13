@@ -1,3 +1,5 @@
+using FinTrack.Api.Observability;
+using System.Diagnostics;
 using FinTrack.Infrastructure.Messaging;
 using FinTrack.Application.Authentication;
 using FinTrack.Infrastructure.Authentication;
@@ -41,12 +43,18 @@ using FinTrack.Application.Dashboard;
 
 using FinTrack.Application.Transactions;
 
+Activity.DefaultIdFormat = ActivityIdFormat.W3C;
+Activity.ForceDefaultIdFormat = true;
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole(options => { options.IncludeScopes = true; options.UseUtcTimestamp = true; options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ"; });
+builder.Logging.Configure(options => options.ActivityTrackingOptions = ActivityTrackingOptions.TraceId | ActivityTrackingOptions.SpanId);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 var migrating = args.Contains("--migrate", StringComparer.Ordinal);
 if (!migrating)
 {
+    builder.Services.AddFinTrackTelemetry(builder.Configuration);
     builder.Services.AddFinTrackAuthentication(builder.Configuration);
     builder.Services.AddBackgroundJobs(builder.Configuration);
     builder.Services.AddMessaging(builder.Configuration);
@@ -98,6 +106,7 @@ if (migrating)
     return;
 }
 
+app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();

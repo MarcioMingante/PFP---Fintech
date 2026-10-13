@@ -3,9 +3,10 @@ API_PORT ?= 5168
 WEB_PORT ?= 3000
 REDIS_PORT ?= 6379
 
-.PHONY: help dev-db dev-migrate dev-api dev-web full status stop test-api test-integration test-fast test-e2e
+.PHONY: help dev-db dev-migrate dev-api dev-web full status stop test-api test-integration test-fast test-e2e dev-observability
 
 help:
+	@echo "dev-observability Inicia Collector, Jaeger e Prometheus locais"
 	@echo "test-e2e         Executa Playwright desktop/mobile em stack isolada"
 	@echo "test-api         Executa toda suíte backend com Testcontainers"
 	@echo "test-integration Executa somente integração (Docker necessário)"
@@ -21,6 +22,9 @@ help:
 dev-db:
 	$(COMPOSE) stop web api
 	$(COMPOSE) up -d --wait postgres redis rabbitmq
+
+dev-observability:
+	$(COMPOSE) up -d otel-collector jaeger prometheus
 
 dev-migrate:
 	dotnet run --project apps/api/src/FinTrack.Api --launch-profile http -- --migrate

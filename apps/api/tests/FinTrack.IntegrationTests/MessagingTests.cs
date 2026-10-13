@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Collections.Concurrent;
+using FinTrack.Infrastructure.Observability;
 using FinTrack.Application.Recurring;
 using System.Net.Http.Json;
 using System.Text;
@@ -59,12 +62,13 @@ public sealed class MessagingTests : IAsyncLifetime
         }
     }
     private sealed record Resource(Guid Id);
-    private async Task<TransactionDto> CreateTransaction()
+    private async Task<TransactionDto> CreateTransaction(string? traceParent = null)
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
         var accountResponse = await client.PostAsJsonAsync("/accounts", new { Name = "Messaging" });
         accountResponse.EnsureSuccessStatusCode();
         var account = (await accountResponse.Content.ReadFromJsonAsync<Resource>())!.Id;
+        if (traceParent is not null) client.DefaultRequestHeaders.Add("traceparent", traceParent);
         var response = await client.PostAsJsonAsync("/transactions", new CreateTransactionCommand(account, null, "Teste", 12.34m, "Expense", new(2026, 1, 1)));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<TransactionDto>())!;
@@ -81,6 +85,40 @@ public sealed class MessagingTests : IAsyncLifetime
         await using var scope = fixture.Services.CreateAsyncScope();
         return await scope.ServiceProvider.GetRequiredService<FinTrackDbContext>().Database
             .SqlQueryRaw<int>(sql).SingleAsync();
+    }
+    [Fact]
+    public async Task RequestOutboxProducerAndConsumers_ShareTraceAcrossDelayedPublication()
+    {
+        var stopped = new ConcurrentQueue<Activity>();
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name is FinTrackTelemetry.Name or "Npgsql" or "Microsoft.AspNetCore",
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            SampleUsingParentId = (ref ActivityCreationOptions<string> _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStopped = stopped.Enqueue
+        };
+        ActivitySource.AddActivityListener(listener);
+        var traceId = ActivityTraceId.CreateRandom();
+        var parentSpan = ActivitySpanId.CreateRandom();
+        await CreateTransaction($"00-{traceId}-{parentSpan}-01");
+        await using (var scope = fixture.Services.CreateAsyncScope())
+        {
+            var parent = await scope.ServiceProvider.GetRequiredService<FinTrackDbContext>().Database
+                .SqlQueryRaw<string>("SELECT trace_parent AS \"Value\" FROM messaging_outbox").SingleAsync();
+            Assert.Equal(traceId, FinTrackTelemetry.Extract(parent, null).TraceId);
+        }
+        await Worker.PublishBatchAsync(channel!, default);
+        foreach (var queue in MessagingWorker.Queues) await Worker.ConsumeOneAsync(channel!, queue, default);
+        var spans = stopped.Where(activity => activity.TraceId == traceId).ToArray();
+        var server = Assert.Single(spans, activity => activity.Kind == ActivityKind.Server);
+        Assert.Equal(parentSpan, server.ParentSpanId);
+        Assert.Contains(spans, activity => activity.Source.Name == "Npgsql" && activity.ParentSpanId == server.SpanId);
+        var producer = Assert.Single(spans, activity => activity.Kind == ActivityKind.Producer && activity.Source.Name == FinTrackTelemetry.Name);
+        Assert.Equal(server.SpanId, producer.ParentSpanId);
+        var consumers = spans.Where(activity => activity.Kind == ActivityKind.Consumer && activity.Source.Name == FinTrackTelemetry.Name).ToArray();
+        Assert.Equal(2, consumers.Length);
+        Assert.All(consumers, activity => Assert.Equal(producer.SpanId, activity.ParentSpanId));
+        Assert.All(consumers, activity => Assert.Contains(spans, child => child.Source.Name == "Npgsql" && child.ParentSpanId == activity.SpanId));
     }
     [Fact]
     public async Task CommittedManualTransaction_FanoutAndDuplicateDelivery_ProduceOneProjectionPerConsumer()

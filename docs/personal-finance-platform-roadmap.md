@@ -1765,6 +1765,21 @@ Distributed tracing
 
 ---
 
+## Entrega aplicada
+
+- [x] Logs JSON estruturados com duração, status, rota e correlação.
+- [x] OpenTelemetry para HTTP, PostgreSQL, jobs, produtor e consumidores.
+- [x] Contexto W3C persistido na outbox e propagado pelo RabbitMQ.
+- [x] Métricas HTTP/runtime e counters de mensageria/recorrências.
+- [x] Collector, Jaeger e Prometheus locais no Compose.
+- [x] Redação de SQL, URLs, headers e tags de dados sensíveis antes de exportar traces.
+- [x] Configuração opcional, documentação e testes direcionados.
+
+Decisão: [020 — Observabilidade local](decisions/020-local-observability.md).
+Logs no console, traces no Jaeger e métricas no Prometheus; sem AWS nesta fase.
+
+---
+
 # Fase 25 — CI
 
 Agora GitHub Actions.

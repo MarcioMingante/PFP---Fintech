@@ -836,3 +836,61 @@ Cobertura inclui fanout, duplicatas, rollback, falha de publicação, DLQ,
 falha de consumidor, ciclo/encerramento do worker, publishers concorrentes e
 SaveChanges síncrono. Build API e Compose validados; suíte completa/E2E não
 executados nesta fase, conforme AGENTS.md.
+
+### Observabilidade local — fase 24
+
+`make full` inicia Collector OTLP, Jaeger e Prometheus. API exporta tracing e
+métricas automaticamente. Para API local:
+
+```bash
+make dev-observability
+export Observability__OtlpEndpoint=http://127.0.0.1:4317
+make dev-api
+```
+
+Aplicar migrations antes de iniciar API atualizada: outbox agora persiste contexto
+W3C. `make full` aplica migration automaticamente. Serviço `--migrate` não
+inicia observabilidade. Configure `.env` conforme `.env.example`, inclusive
+`RABBITMQ_PASSWORD` para validação do Compose.
+
+- Jaeger: `http://localhost:16686`, serviço `fintrack-api`.
+- Prometheus: `http://localhost:9090`.
+- Logs JSON: `docker compose logs -f api`.
+
+Resposta HTTP contém `X-Correlation-ID` com trace ID; procure esse ID no Jaeger
+ou campo `TraceId` dos scopes dos logs. Cliente pode enviar `traceparent` W3C
+válido. Transação salva contexto na outbox; publicação posterior e ambos os
+consumidores mantêm trace, com spans PostgreSQL associados. Jobs criam trace
+por ciclo. Endpoint/headers/corpo completos e SQL não são exportados por tracing;
+logs próprios usam templates de rota e campos operacionais.
+
+Consultas Prometheus úteis:
+
+```promql
+rate(fintrack_messaging_published_total[5m])
+rate(fintrack_messaging_consumed_total[5m])
+fintrack_messaging_dead_letters_total
+fintrack_recurring_generated_total
+fintrack_recurring_cycles_total
+```
+
+Contadores de publicação/consumo medem confirmações/entregas, incluindo duplicatas;
+não substituem contagem de transações financeiras. Falhas por tentativa ficam em
+`fintrack_messaging_failures_total`. Métricas HTTP e runtime .NET também ficam
+disponíveis. Exportação ocorre periodicamente; aguarde até cerca de um minuto
+para primeira série após iniciar API.
+
+`OBSERVABILITY_ENABLED=false` desativa SDK no Compose; API local usa
+`Observability__Enabled=false`. Sem `Observability__OtlpEndpoint`, SDK registra
+instrumentação sem exportação externa. Collector offline não bloqueia escritas;
+telemetria pode ser perdida. Jaeger mantém traces em memória, Prometheus retém
+sete dias em volume. Portas OTLP/UIs apenas no loopback. Logs permanecem no
+console; tracing de frontend, alertas e AWS não incluídos.
+
+Decisão em [020 — Observabilidade local](docs/decisions/020-local-observability.md).
+
+Validação da fase 24: 6 unitários e 16 integrações relacionadas passaram,
+sem skips. Trace HTTP/PostgreSQL/outbox/producer/ambos os consumidores verificado;
+configuração real do Collector confirmou trace no Jaeger e counter no Prometheus
+via OTLP. Stack temporário removido. Build API e Compose validados; suíte completa
+e E2E não executados, conforme AGENTS.md.

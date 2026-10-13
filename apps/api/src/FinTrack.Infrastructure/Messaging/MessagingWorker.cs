@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using FinTrack.Infrastructure.Observability;
 using System.Text;
 using System.Text.Json;
 using FinTrack.Infrastructure.Persistence;
@@ -64,14 +66,29 @@ public sealed class MessagingWorker(IServiceScopeFactory scopes, MessagingSettin
         await using var transaction = await database.Database.BeginTransactionAsync(token);
         // Lock pending rows until confirmations and commit. Concurrent API instances skip locked work.
         var rows = await database.Database.SqlQueryRaw<PendingEvent>("""
-            SELECT event_id AS "EventId", payload::text AS "Payload" FROM messaging_outbox
+            SELECT event_id AS "EventId", payload::text AS "Payload", trace_parent AS "TraceParent", trace_state AS "TraceState" FROM messaging_outbox
             WHERE published_at IS NULL ORDER BY created_at, event_id LIMIT 50 FOR UPDATE SKIP LOCKED
             """).ToListAsync(token);
         foreach (var row in rows)
         {
+            using var activity = FinTrackTelemetry.Activities.StartActivity("TransactionCreated publish", ActivityKind.Producer,
+                FinTrackTelemetry.Extract(row.TraceParent, row.TraceState));
+            activity?.SetTag("messaging.system", "rabbitmq");
+            activity?.SetTag("messaging.destination.name", Exchange);
             var properties = new BasicProperties { Persistent = true, ContentType = "application/json",
-                Type = "TransactionCreated", MessageId = row.EventId.ToString() };
-            await channel.BasicPublishAsync(Exchange, "", mandatory: true, properties, Encoding.UTF8.GetBytes(row.Payload), token);
+                Type = "TransactionCreated", MessageId = row.EventId.ToString(), Headers = FinTrackTelemetry.Headers(activity) };
+            try
+            {
+                await channel.BasicPublishAsync(Exchange, "", mandatory: true, properties, Encoding.UTF8.GetBytes(row.Payload), token);
+                FinTrackTelemetry.Published.Add(1);
+                logger.LogInformation("TransactionCreated publication confirmed");
+            }
+            catch
+            {
+                activity?.SetStatus(ActivityStatusCode.Error);
+                FinTrackTelemetry.Failures.Add(1, new KeyValuePair<string, object?>("operation", "publish"));
+                throw;
+            }
             await database.Database.ExecuteSqlInterpolatedAsync($"UPDATE messaging_outbox SET published_at = now() WHERE event_id = {row.EventId}", token);
         }
         await transaction.CommitAsync(token);
@@ -82,6 +99,11 @@ public sealed class MessagingWorker(IServiceScopeFactory scopes, MessagingSettin
         if (!Queues.Contains(queue)) throw new ArgumentException("Fila inválida.", nameof(queue));
         var delivery = await channel.BasicGetAsync(queue, autoAck: false, cancellationToken: token);
         if (delivery is null) return;
+        using var activity = FinTrackTelemetry.Activities.StartActivity("TransactionCreated consume", ActivityKind.Consumer,
+            FinTrackTelemetry.Extract(FinTrackTelemetry.Header(delivery.BasicProperties.Headers, "traceparent"),
+                FinTrackTelemetry.Header(delivery.BasicProperties.Headers, "tracestate")));
+        activity?.SetTag("messaging.system", "rabbitmq");
+        activity?.SetTag("messaging.destination.name", queue);
         for (var attempt = 1; attempt <= 3; attempt++)
         {
             try
@@ -106,14 +128,19 @@ public sealed class MessagingWorker(IServiceScopeFactory scopes, MessagingSettin
                         VALUES ({item.EventId}, {item.TransactionId}, {item.UserId}) ON CONFLICT (event_id) DO NOTHING
                         """, token);
                 await channel.BasicAckAsync(delivery.DeliveryTag, multiple: false, cancellationToken: token);
+                FinTrackTelemetry.Consumed.Add(1, new KeyValuePair<string, object?>("consumer", queue));
+                logger.LogInformation("TransactionCreated delivery acknowledged by {Consumer}", queue);
                 return;
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
             catch (Exception exception)
             {
+                FinTrackTelemetry.Failures.Add(1, new KeyValuePair<string, object?>("operation", "consume"));
                 logger.LogWarning("Consumer {Consumer} attempt {Attempt} failed ({ErrorType})", queue, attempt, exception.GetType().Name);
                 if (attempt == 3 || exception is JsonException)
                 {
+                    activity?.SetStatus(ActivityStatusCode.Error);
+                    FinTrackTelemetry.DeadLetters.Add(1, new KeyValuePair<string, object?>("consumer", queue));
                     await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: false, cancellationToken: token);
                     return;
                 }
@@ -126,5 +153,7 @@ public sealed class MessagingWorker(IServiceScopeFactory scopes, MessagingSettin
     {
         public Guid EventId { get; set; }
         public string Payload { get; set; } = string.Empty;
+        public string? TraceParent { get; set; }
+        public string? TraceState { get; set; }
     }
 }

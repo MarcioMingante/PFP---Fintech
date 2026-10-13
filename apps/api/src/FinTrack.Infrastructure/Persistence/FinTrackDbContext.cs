@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using FinTrack.Infrastructure.Messaging;
 using FinTrack.Domain.Accounts;
@@ -61,7 +62,7 @@ public sealed class FinTrackDbContext(
         ON CONFLICT (user_id) DO UPDATE SET revision = dashboard_cache_revisions.revision + 1
         """, cancellationToken);
     foreach (var item in events)
-      await Database.ExecuteSqlInterpolatedAsync($"INSERT INTO messaging_outbox (event_id, payload) VALUES ({item.EventId}, {JsonSerializer.Serialize(item)}::jsonb) ON CONFLICT DO NOTHING", cancellationToken);
+      await Database.ExecuteSqlInterpolatedAsync($"INSERT INTO messaging_outbox (event_id, payload, trace_parent, trace_state) VALUES ({item.EventId}, {JsonSerializer.Serialize(item)}::jsonb, {(Activity.Current != null && Activity.Current.IdFormat == ActivityIdFormat.W3C ? Activity.Current.Id : null)}, {Activity.Current?.TraceStateString}) ON CONFLICT DO NOTHING", cancellationToken);
     if (transaction is not null) await transaction.CommitAsync(cancellationToken);
     return result;
   }
@@ -79,7 +80,7 @@ public sealed class FinTrackDbContext(
         ON CONFLICT (user_id) DO UPDATE SET revision = dashboard_cache_revisions.revision + 1
         """);
     foreach (var item in events)
-      Database.ExecuteSqlInterpolated($"INSERT INTO messaging_outbox (event_id, payload) VALUES ({item.EventId}, {JsonSerializer.Serialize(item)}::jsonb) ON CONFLICT DO NOTHING");
+      Database.ExecuteSqlInterpolated($"INSERT INTO messaging_outbox (event_id, payload, trace_parent, trace_state) VALUES ({item.EventId}, {JsonSerializer.Serialize(item)}::jsonb, {(Activity.Current != null && Activity.Current.IdFormat == ActivityIdFormat.W3C ? Activity.Current.Id : null)}, {Activity.Current?.TraceStateString}) ON CONFLICT DO NOTHING");
     transaction?.Commit();
     return result;
   }
