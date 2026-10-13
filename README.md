@@ -127,6 +127,27 @@ conta, credencial ou recurso AWS foi criado. GHCR permanece fora do escopo.
 Next.js SSR exige runtime; SQS requer adaptação do transporte. Diagrama não
 representa deploy realizado nem altera Compose, CI ou código da aplicação.
 
+## Fase 29 — Mensageria local e estudo de SQS
+
+RabbitMQ permanece implementação real, com outbox, publisher confirms, retries,
+deduplicação por consumidor e DLQs. [Demonstração e comparação com SQS](docs/architecture/rabbitmq-and-sqs.md)
+explicam fanout, visibility timeout, long polling, entrega e dead letters com
+referências oficiais. [ADR 025](docs/decisions/025-local-messaging-sqs-comparison.md)
+mantém SQS/SNS somente como estudo, sem SDK, recursos ou credenciais AWS.
+
+Para validar garantias com PostgreSQL/RabbitMQ descartáveis, sem usar `.env` ou
+banco pessoal:
+
+```bash
+make test-messaging
+```
+
+Diagnóstico local somente leitura disponível em
+[messaging-diagnostics.sql](docs/database/messaging-diagnostics.sql).
+Não há replay automático nem envio de notificações externas.
+Validação da fase 29: 5 unitários e 9 integrações de mensageria aprovados,
+sem skips. Links locais e diagnóstico somente leitura conferidos.
+
 ## Backend local
 
 Pré-requisitos: SDK .NET 10 e chave JWT configurada conforme fase 13. PostgreSQL em Docker é necessário para operações

@@ -1928,6 +1928,18 @@ Estudar diferenças com SQS em documentação: queue vs pub/sub, visibility time
 long polling, entrega e dead letters. Não criar filas AWS nem trocar integração
 funcional por dependência de serviço pago.
 
+## Entrega aplicada
+
+- [x] RabbitMQ preservado como implementação real.
+- [x] Demonstração de outbox, confirms, retries, deduplicação e DLQs com testes existentes.
+- [x] Alvo `make test-messaging` e diagnóstico SQL somente leitura.
+- [x] Comparação queue/pub-sub, visibility timeout, long polling, entrega e dead letters.
+- [x] SQS/SNS exclusivamente documentais; sem filas ou credenciais AWS.
+
+Estudo: [RabbitMQ e SQS](architecture/rabbitmq-and-sqs.md).
+Decisão: [025 — Mensageria local e estudo de SQS](decisions/025-local-messaging-sqs-comparison.md).
+
+
 ---
 
 # Fase 30 — Infrastructure as Code local

@@ -9,8 +9,10 @@ export IMAGE_TAG
 .PHONY: ci ci-web ci-api ci-e2e ci-install ci-install-e2e
 .PHONY: images-build images-run
 .PHONY: setup config-check logs migrate
+.PHONY: test-messaging
 
 help:
+	@echo "test-messaging  Valida mensageria com testes direcionados (Docker necessário)"
 	@echo "setup           Cria .env local com segredos aleatórios, sem sobrescrever"
 	@echo "config-check    Valida configuração Compose sem exibir segredos"
 	@echo "logs            Acompanha logs locais (Ctrl+C encerra acompanhamento)"
@@ -83,6 +85,10 @@ test-api:
 
 test-integration:
 	dotnet test apps/api/tests/FinTrack.IntegrationTests -m:1
+
+test-messaging:
+	dotnet test apps/api/tests/FinTrack.UnitTests -m:1 --filter FullyQualifiedName~FinTrack.UnitTests.Messaging.MessagingTests
+	dotnet test apps/api/tests/FinTrack.IntegrationTests -m:1 --filter FullyQualifiedName~FinTrack.IntegrationTests.MessagingTests
 
 test-fast:
 	dotnet test apps/api/tests/FinTrack.UnitTests -m:1
