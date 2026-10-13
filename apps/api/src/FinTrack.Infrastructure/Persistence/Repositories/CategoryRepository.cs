@@ -12,6 +12,7 @@ public sealed class CategoryRepository(FinTrackDbContext dbContext) : ICategoryR
     CancellationToken cancellationToken = default
   )
   {
+    category.AssignOwner(dbContext.CurrentUserId ?? throw new UnauthorizedAccessException());
     dbContext.Categories.Add(category);
 
     await dbContext.SaveChangesAsync(cancellationToken);

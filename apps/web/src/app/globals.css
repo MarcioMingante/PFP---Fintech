@@ -75,3 +75,16 @@ footer { padding: 16px 40px 28px; color: var(--muted); font-size: 11px; }
 @media (max-width: 1100px) { .sidebar { width: 210px; } main { padding: 36px 28px; } .welcome-panel { padding: 28px; } .module-card { padding: 20px; } }
 @media (max-width: 899px) { .app-shell { flex-direction: column; } .sidebar { width: 100%; padding: 20px 24px 14px; border-right: 0; border-bottom: 1px solid var(--border); } .sidebar-label, .sidebar-note { display: none; } .navigation { margin-top: 20px; flex-direction: row; flex-wrap: wrap; gap: 5px; } .navigation a { padding: 10px; } .nav-icon { display: none; } .topbar { padding: 17px 28px; } }
 @media (max-width: 600px) { main { padding: 30px 20px; } .topbar { padding: 16px 20px; } .navigation a { font-size: 12px; } .welcome-panel { grid-template-columns: 1fr; padding: 26px; } .welcome-art { display: none; } .module-grid { grid-template-columns: 1fr; } .card-number { margin-bottom: 15px; } .panel-toolbar { align-items: stretch; flex-direction: column; padding: 22px; } input { width: 100%; } .resource-list { padding: 0 22px; } .error-state { padding: 28px; } footer { padding-left: 20px; } }
+
+.auth-page { max-width: 500px; padding: 50px 20px; }
+.auth-panel { padding: 32px; }
+.auth-panel > p { color: var(--muted); line-height: 1.7; }
+.auth-form { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+.auth-form label { font-weight: 600; font-size: 13px; }
+.auth-form input { width: 100%; }
+.auth-form p, .auth-form a { font-size: 12px; line-height: 1.6; }
+.auth-form .button { margin-top: 4px; }
+.auth-form a { color: var(--accent); margin-top: 8px; }
+.auth-error { color: #ad2c24; }
+.session-button { border: 0; background: transparent; color: var(--accent); padding: 5px; font-weight: 600; }
+.auth-panel > form:last-child:not(.auth-form) { margin-top: 20px; }

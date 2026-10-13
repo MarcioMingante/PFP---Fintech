@@ -14,7 +14,7 @@ public sealed class ResourceEndpointTests(PostgresApiFixture fixture) : IClassFi
     [InlineData("/categories")]
     public async Task CreateReadUpdate_PersistsAcrossRequests(string route)
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAuthenticatedClientAsync();
         using var created = await client.PostAsJsonAsync(route, new { Name = "  Original  " });
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         var resource = (await created.Content.ReadFromJsonAsync<Resource>())!;
@@ -24,6 +24,7 @@ public sealed class ResourceEndpointTests(PostgresApiFixture fixture) : IClassFi
 
         // A new client/request uses a different scoped DbContext: verify database persistence.
         using var reader = fixture.CreateClient();
+        reader.DefaultRequestHeaders.Authorization = client.DefaultRequestHeaders.Authorization;
         Assert.Equal(resource, await reader.GetFromJsonAsync<Resource>($"{route}/{resource.Id}"));
         Assert.Contains(resource, (await reader.GetFromJsonAsync<Resource[]>(route))!);
 
@@ -37,7 +38,7 @@ public sealed class ResourceEndpointTests(PostgresApiFixture fixture) : IClassFi
     [InlineData("/categories")]
     public async Task InvalidCreateAndUpdate_ReturnValidationProblemWithoutChangingData(string route)
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAuthenticatedClientAsync();
         var before = (await client.GetFromJsonAsync<Resource[]>(route))!;
         using var invalidCreate = await client.PostAsJsonAsync(route, new { Name = " " });
         await AssertNameValidationAsync(invalidCreate);
@@ -55,7 +56,7 @@ public sealed class ResourceEndpointTests(PostgresApiFixture fixture) : IClassFi
     [InlineData("/categories")]
     public async Task MissingResource_GetAndUpdateReturnNotFound(string route)
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAuthenticatedClientAsync();
         var url = $"{route}/{Guid.NewGuid()}";
         using var get = await client.GetAsync(url);
         using var update = await client.PutAsJsonAsync(url, new { Name = "Válido" });
@@ -66,7 +67,7 @@ public sealed class ResourceEndpointTests(PostgresApiFixture fixture) : IClassFi
     [PostgresFact]
     public async Task DeleteAccount_RemovesPersistedAccountAndRepeatedDeleteReturnsNotFound()
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAuthenticatedClientAsync();
         using var created = await client.PostAsJsonAsync("/accounts", new { Name = "Excluir" });
         var resource = (await created.Content.ReadFromJsonAsync<Resource>())!;
         var url = $"/accounts/{resource.Id}";

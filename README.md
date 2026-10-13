@@ -3,7 +3,7 @@ Personal Finance Platform
 
 ## Backend local
 
-Pré-requisitos: SDK .NET 10. PostgreSQL em Docker é necessário para operações
+Pré-requisitos: SDK .NET 10 e chave JWT configurada conforme fase 13. PostgreSQL em Docker é necessário para operações
 de contas e categorias; `/health` não consulta o banco.
 
 Na raiz do repositório:
@@ -105,7 +105,6 @@ credenciais locais do PostgreSQL. `API_PORT` é opcional e usa `5168` por padrã
 ```bash
 docker compose up --build -d --wait
 curl --fail http://localhost:5168/health
-curl --fail http://localhost:5168/accounts
 docker compose logs api migrate
 docker compose down
 ```
@@ -314,3 +313,95 @@ Validação da fase 12: `make full`, alternância para `dev-db`, migrations loca
 API com dotnet watch e preservação de dados passaram em ambiente isolado.
 Comando `dev-web` foi conferido; nova instância Next.js não pôde ser validada
 porque já havia servidor de desenvolvimento neste checkout.
+
+## Fase 13 — Authentication
+
+Autenticação implementada na API e frontend. Crie acesso em `/register` e entre
+em `/login`; dashboard, contas, categorias e transações exigem sessão. Navegação
+mostra e-mail autenticado e botão `Sair`. Tokens ficam em cookies **HttpOnly**
+com **SameSite=Lax**, sem armazenamento em localStorage ou retorno no estado
+client do formulário. Server Actions fazem login, registro, renovação e logout.
+Quando access token expira, página de login oferece `Renovar sessão` enquanto
+cookie de refresh existir; renovação é explícita por POST, sem mutação em GET.
+
+### Configuração
+
+Compose recebe chave por `JWT_SIGNING_KEY` do `.env` da raiz. Nesta execução,
+chave aleatória foi gerada no `.env` local quando ausente, sem versionamento.
+Em checkout novo, gere chave e coloque em `JWT_SIGNING_KEY`:
+
+```bash
+openssl rand -base64 48
+make full
+```
+
+API recusa startup sem `Jwt:SigningKey` com pelo menos 32 bytes. Chave não é
+incorporada às imagens. Não reutilize chave de teste. API local exige configuração
+própria via User Secrets (independente do `.env` de Compose):
+
+```bash
+dotnet user-secrets set "Jwt:SigningKey" "$(openssl rand -base64 48)" --project apps/api/src/FinTrack.Api
+make dev-db
+make dev-migrate
+make dev-api
+```
+
+`dev-migrate` não exige chave JWT e continua usando conexão local configurada.
+`AUTH_COOKIE_SECURE=false` atende HTTP local; configure **true** para frontend
+servido por HTTPS. Issuer padrão `FinTrack`, audience `FinTrack.Client`, access
+TTL de 15 minutos e sessão/refresh de 7 dias. `Jwt:AccessMinutes` aceita 1–60 e
+`Jwt:RefreshDays` aceita 1–30. Renovação não prolonga limite absoluto da sessão.
+
+### API
+
+- `POST /auth/register`: `{ "email": "user@example.com", "password": "Password!123456" }`.
+- `POST /auth/login`: mesmos campos.
+- `POST /auth/refresh`: `{ "refreshToken": "TOKEN_RECEBIDO" }`.
+- `POST /auth/logout`: exige access token; encerra sessão atual.
+- `GET /auth/me`: exige access token; retorna ID e e-mail do usuário.
+
+Registro retorna `201`; login e refresh, `200`, com `accessToken`, `expiresAt`,
+`refreshToken` e `refreshExpiresAt`. Registro valida e-mail e senha de 12–128
+caracteres (`400` para dados inválidos); e-mail normalizado é único (`409` para
+duplicado). Credenciais/token inválidos, expirados ou revogados retornam `401`.
+Envie `Authorization: Bearer ACCESS_TOKEN` em contas/categorias e endpoints
+protegidos de auth. `/health` permanece público e sem consulta ao banco.
+
+Senhas são armazenadas pelo PasswordHasher do ASP.NET Core (PBKDF2 com salt e
+210.000 iterações). JWT HS256 valida assinatura, issuer, audience e expiração,
+com claims `sub`, `sid`, `email`, `jti` e `iat`. Middleware também verifica sessão
+ativa no banco, permitindo revogar access token imediatamente no logout.
+Refresh tokens usam 64 bytes aleatórios; banco guarda apenas hash SHA-256.
+Rotação usa comparação e atualização atômica: apenas uma requisição concorrente
+pode consumir token; token antigo não pode ser reutilizado.
+
+Registro, login e refresh têm limite compartilhado de 20 requisições/minuto por
+IP (`429` quando excedido; `Auth:RequestsPerMinute` configura limite). Sessão/me
+não consomem esse limite. No fluxo Next.js, API observa IP do servidor frontend;
+limite pode ser compartilhado pelos seus clientes. Logout revoga sessão atual,
+não sessões de outros dispositivos. Se API estiver indisponível no logout web,
+cookies locais são removidos; sessão no banco permanece até revogação/expiração.
+
+### Isolamento e dados existentes
+
+Migration `AddAuthentication` cria `users`, `refresh_sessions` e `user_id` em
+contas/categorias. Repositório atribui usuário autenticado ao criar recurso;
+filtros EF limitam leitura, edição e exclusão ao proprietário. ID pertencente
+a outro usuário retorna **404** para não revelar sua existência. `403` fica
+reservado a futuras políticas de permissão; nesta fase não existem papéis.
+
+Dados anteriores são preservados com `user_id` nulo e ficam **inacessíveis**
+a usuários novos. Nenhum registro é atribuído automaticamente. Recuperação
+exige atribuição explícita ao usuário correto após revisão de titularidade.
+Transações ainda não existem; deverão seguir o mesmo isolamento quando criadas.
+
+### Validação
+
+86 testes backend e 5 frontend passaram. Cobertura inclui credenciais, senha
+hashed, endpoints anônimos, assinatura/issuer/audience/expiração JWT, logout,
+sessão expirada, refresh concorrente, isolamento de contas/categorias e upgrade
+com dados antigos. Build Docker, healthchecks e formulários web foram verificados
+por HTTP real em stack isolada, incluindo cookies HttpOnly/SameSite e revogação.
+Revisão visual e interações por navegador seguem pendentes.
+
+Implementação estudada a partir da [documentação oficial de JWT bearer](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-jwt-bearer-authentication?view=aspnetcore-10.0).

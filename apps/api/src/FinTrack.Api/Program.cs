@@ -1,3 +1,8 @@
+using FinTrack.Application.Authentication;
+using FinTrack.Infrastructure.Authentication;
+using System.Security.Claims;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using FinTrack.Infrastructure;
 using FinTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +23,18 @@ using FinTrack.Application.Categories.Commands.UpdateCategory;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
+var migrating = args.Contains("--migrate", StringComparer.Ordinal);
+if (!migrating)
+{
+    builder.Services.AddFinTrackAuthentication(builder.Configuration);
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue("Auth:RequestsPerMinute", 20), Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    });
+}
 builder.Services.AddScoped<CreateAccountHandler>();
 builder.Services.AddScoped<CreateAccountCommandValidator>();
 builder.Services.AddScoped<ListAccountsHandler>();
@@ -35,7 +52,7 @@ builder.Services.AddScoped<UpdateCategoryCommandValidator>();
 var app = builder.Build();
 
 // Compose runs migrations in a one-off container before starting the HTTP API.
-if (args.Contains("--migrate", StringComparer.Ordinal))
+if (migrating)
 {
     await using var scope = app.Services.CreateAsyncScope();
     var database = scope.ServiceProvider.GetRequiredService<FinTrackDbContext>();
@@ -44,13 +61,46 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
     return;
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
+
+var accounts = app.MapGroup("/accounts").RequireAuthorization();
+var categories = app.MapGroup("/categories").RequireAuthorization();
+var auth = app.MapGroup("/auth");
+auth.MapPost("/register", async (Credentials credentials, IAuthService service, CancellationToken cancellationToken) =>
+{
+    var errors = CredentialsValidator.Validate(credentials);
+    if (errors.Count > 0) return Results.ValidationProblem(errors);
+    var result = await service.RegisterAsync(credentials, cancellationToken);
+    return result.Status == AuthStatus.Conflict
+        ? Results.Conflict(new { message = "E-mail já cadastrado." })
+        : Results.Json(result.Tokens, statusCode: StatusCodes.Status201Created);
+}).RequireRateLimiting("auth");
+auth.MapPost("/login", async (Credentials credentials, IAuthService service, CancellationToken cancellationToken) =>
+{
+    var result = await service.LoginAsync(credentials, cancellationToken);
+    return result.Status == AuthStatus.Success ? Results.Ok(result.Tokens) : Results.Unauthorized();
+}).RequireRateLimiting("auth");
+auth.MapPost("/refresh", async (RefreshRequest request, IAuthService service, CancellationToken cancellationToken) =>
+{
+    var result = await service.RefreshAsync(request.RefreshToken, cancellationToken);
+    return result.Status == AuthStatus.Success ? Results.Ok(result.Tokens) : Results.Unauthorized();
+}).RequireRateLimiting("auth");
+auth.MapPost("/logout", async (ClaimsPrincipal user, IAuthService service, CancellationToken cancellationToken) =>
+{
+    await service.LogoutAsync(Guid.Parse(user.FindFirstValue("sub")!), Guid.Parse(user.FindFirstValue("sid")!), cancellationToken);
+    return Results.NoContent();
+}).RequireAuthorization();
+auth.MapGet("/me", (ClaimsPrincipal user) => Results.Ok(new { id = user.FindFirstValue("sub"), email = user.FindFirstValue("email") })).RequireAuthorization();
+
 app.MapGet("/health", () => Results.Ok(new
 {
     status = "healthy"
 }));
 
-app.MapPost(
-    "/accounts",
+accounts.MapPost(
+    "",
     async (
         CreateAccountRequest request,
         CreateAccountCommandValidator validator,
@@ -72,8 +122,8 @@ app.MapPost(
     }
 );
 
-app.MapGet(
-    "/accounts",
+accounts.MapGet(
+    "",
     async (
         ListAccountsHandler handler,
         CancellationToken cancellationToken
@@ -87,8 +137,8 @@ app.MapGet(
     }
 );
 
-app.MapGet(
-    "/accounts/{id:guid}",
+accounts.MapGet(
+    "/{id:guid}",
     async (
         Guid id,
         GetAccountHandler handler,
@@ -111,8 +161,8 @@ app.MapGet(
     }
 );
 
-app.MapPut(
-    "/accounts/{id:guid}",
+accounts.MapPut(
+    "/{id:guid}",
     async (
         Guid id,
         UpdateAccountRequest request,
@@ -147,8 +197,8 @@ app.MapPut(
     }
 );
 
-app.MapDelete(
-    "/accounts/{id:guid}",
+accounts.MapDelete(
+    "/{id:guid}",
     async (
         Guid id,
         DeleteAccountHandler handler,
@@ -171,8 +221,8 @@ app.MapDelete(
     }
 );
 
-app.MapPost(
-    "/categories",
+categories.MapPost(
+    "",
     async (
         CreateCategoryRequest request,
         CreateCategoryCommandValidator validator,
@@ -200,8 +250,8 @@ app.MapPost(
     }
 );
 
-app.MapGet(
-    "/categories",
+categories.MapGet(
+    "",
     async (
         ListCategoriesHandler handler,
         CancellationToken cancellationToken
@@ -215,8 +265,8 @@ app.MapGet(
     }
 );
 
-app.MapGet(
-    "/categories/{id:guid}",
+categories.MapGet(
+    "/{id:guid}",
     async (
         Guid id,
         GetCategoryHandler handler,
@@ -236,8 +286,8 @@ app.MapGet(
     }
 );
 
-app.MapPut(
-    "/categories/{id:guid}",
+categories.MapPut(
+    "/{id:guid}",
     async (
         Guid id,
         UpdateCategoryRequest request,

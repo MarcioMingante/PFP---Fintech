@@ -988,6 +988,22 @@ Mas não precisa fazer isso imediatamente.
 
 # Fase 13 — Authentication
 
+## Execução no repositório
+
+- [x] Register/Login com validação, e-mail único e password hashing.
+- [x] JWT validando assinatura, issuer, audience e expiração.
+- [x] Refresh token persistido como hash, com rotação atômica e validade absoluta.
+- [x] Logout revogando sessão e access token imediatamente.
+- [x] Endpoints protegidos e isolamento de contas/categorias por usuário.
+- [x] Migration preservando registros legados sem atribuição automática.
+- [x] Frontend com login, cadastro, cookies HttpOnly e renovação por POST.
+- [x] Configuração local/Docker, documentação e decisão de arquitetura.
+- [x] 86 testes backend, 5 frontend, build e smoke HTTP de autenticação validados.
+
+Transações aguardam fase 6 e deverão respeitar mesma propriedade. Registros
+legados sem usuário ficam inacessíveis até atribuição explícita. Revisão visual
+no navegador permanece pendente; fluxo web foi validado por HTTP.
+
 Agora implemente autenticação.
 
 Funcionalidades:

@@ -10,6 +10,9 @@ internal sealed class AccountConfiguration : IEntityTypeConfiguration<Account>
   {
     builder.ToTable("accounts");
 
+    builder.Property(item => item.UserId).HasColumnName("user_id");
+    builder.HasOne<FinTrack.Domain.Users.User>().WithMany().HasForeignKey(item => item.UserId).OnDelete(DeleteBehavior.Restrict);
+
     builder.HasKey(account => account.Id);
 
     builder.Property(account => account.Id)

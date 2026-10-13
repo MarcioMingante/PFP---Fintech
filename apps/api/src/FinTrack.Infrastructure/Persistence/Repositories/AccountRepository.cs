@@ -11,6 +11,7 @@ public sealed class AccountRepository(FinTrackDbContext dbContext) : IAccountRep
     CancellationToken cancellationToken = default
   )
   {
+    account.AssignOwner(dbContext.CurrentUserId ?? throw new UnauthorizedAccessException());
     dbContext.Accounts.Add(account);
 
     await dbContext.SaveChangesAsync(cancellationToken);

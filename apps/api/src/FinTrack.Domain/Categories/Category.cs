@@ -31,6 +31,15 @@ public sealed class Category
     Name = name.Trim();
   }
 
+  public Guid? UserId { get; private set; }
+
+  public void AssignOwner(Guid userId)
+  {
+    if (userId == Guid.Empty) throw new ArgumentException("Usuário obrigatório.", nameof(userId));
+    if (UserId.HasValue && UserId != userId) throw new InvalidOperationException("Proprietário não pode ser alterado.");
+    UserId = userId;
+  }
+
   public Guid Id { get; private set; }
 
   public string Name { get; private set; } = string.Empty;
