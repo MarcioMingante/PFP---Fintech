@@ -579,3 +579,38 @@ Migration `AddRecurringTransactions` cria templates, lançamentos, FKs,
 constraints e índice único por recorrência/data. Testes PostgreSQL cobrem
 concorrência e recuperação de meses pendentes. Decisões em
 [013 — Recorrências](docs/decisions/013-recurring-transactions.md).
+
+### Dashboard — fase 18
+
+`GET /dashboard/summary?asOf=2026-10-13` retorna resumo autenticado por usuário:
+
+- `currentBalance`, `incomeThisMonth`, `expensesThisMonth`;
+- `creditCardInvoicesThisMonth` e faturas detalhadas em `invoices`;
+- `expensesByCategory`, incluindo despesas sem categoria;
+- `monthlyHistory`, com 12 meses e zeros nos meses sem movimento;
+- `forecast`, com próximos três meses completos, e `futureExpenses` total.
+
+Data opcional usa hoje em UTC. Saldo considera receitas menos despesas até data
+selecionada, sem saldo inicial. Despesas das contas e faturas são separadas;
+faturas exibidas vencem no mês selecionado. Previsão inclui parcelas,
+lançamentos futuros conhecidos e recorrências ativas ainda não geradas,
+respeitando término e evitando duplicação. `asOf` não reconstrói alterações
+históricas de templates ou pagamentos inexistentes.
+
+`/dashboard` agora consome API e exibe indicadores, filtro de data, gráficos
+ECharts, histórico em tabela, categorias, faturas e previsão. Estados vazios,
+carregamento e erro são tratados sem dados fictícios. Validação de sessão e
+cookies HttpOnly seguem fluxo existente. Acesso sem autenticação retorna 401
+na API; frontend redireciona ao login.
+
+Sem migration adicional. Testes validam totais decimais, cortes de data,
+previsões e isolamento usando PostgreSQL. Decisão em
+[014 — Dashboard](docs/decisions/014-dashboard-read-model.md). Implementação
+dos gráficos segue [documentação ECharts](https://echarts.apache.org/handbook/en/concepts/chart-size/).
+
+Validação da fase 18: 149 testes backend (sem skips), 7 frontend, lint,
+typecheck e build com `npm run build -- --webpack` passaram. Build Turbopack
+esbarrou em restrição de sockets deste ambiente. Smoke HTTP confirmou
+dashboard autenticado com dados reais da API isolada, recuperação de data
+inválida e redirecionamento sem sessão. Revisão visual/interação dos gráficos
+no navegador pendente: nenhum navegador disponível na sessão.

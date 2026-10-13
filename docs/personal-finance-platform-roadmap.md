@@ -1308,6 +1308,25 @@ Recurring jobs
 
 # Fase 18 — Dashboard
 
+## Execução no repositório
+
+- [x] GET `/dashboard/summary` autenticado com agregações SQL por usuário.
+- [x] Saldo registrado, receitas/despesas do mês e categorias.
+- [x] Histórico de 12 meses com preenchimento de meses vazios.
+- [x] Faturas do mês e previsão de despesas dos próximos três meses.
+- [x] Recorrências e lançamentos futuros sem duplicar ocorrências registradas.
+- [x] Snapshot consistente, projeções e filtros de propriedade existentes.
+- [x] Dashboard Next.js com filtro de data, ECharts e alternativas acessíveis.
+- [x] Contrato Zod e estados de carregamento, vazio, erro e sessão expirada.
+- [x] Documentação e decisão de arquitetura 014.
+- [x] 149 testes backend passaram, nenhum ignorado, com PostgreSQL real.
+- [x] 7 testes frontend, lint, tipos, build Webpack e smoke HTTP web/API.
+
+Saldo não inclui saldo inicial; faturas permanecem separadas das despesas das
+contas. Pagamentos e CRUD manual ainda pendentes. Revisão visual depende de
+navegador disponível; validação frontend/HTTP registrada no README.
+
+
 Agora finalmente temos dados suficientes para um dashboard relevante.
 
 Exibir:
