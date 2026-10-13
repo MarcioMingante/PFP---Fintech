@@ -6,6 +6,14 @@ using System.Threading.RateLimiting;
 using FinTrack.Infrastructure;
 using FinTrack.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using FinTrack.Application.CreditCards.Commands.CreateCreditCard;
+using FinTrack.Api.Contracts.CreditCards;
+using FinTrack.Application.CreditCards.Validators;
+using FinTrack.Application.CreditCards.Queries.ListCreditCards;
+using FinTrack.Application.CreditCards.Queries.GetCreditCard;
+using FinTrack.Application.CreditCards.Commands.UpdateCreditCard;
+using FinTrack.Application.CreditCards.Commands.DeleteCreditCard;
+
 using FinTrack.Application.Accounts.Commands.CreateAccount;
 using FinTrack.Api.Contracts.Accounts;
 using FinTrack.Application.Accounts.Validators;
@@ -13,6 +21,7 @@ using FinTrack.Application.Accounts.Queries.ListAccounts;
 using FinTrack.Application.Accounts.Queries.GetAccount;
 using FinTrack.Application.Accounts.Commands.UpdateAccount;
 using FinTrack.Application.Accounts.Commands.DeleteAccount;
+
 using FinTrack.Api.Contracts.Categories;
 using FinTrack.Application.Categories.Commands.CreateCategory;
 using FinTrack.Application.Categories.Validators;
@@ -35,6 +44,13 @@ if (!migrating)
             _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue("Auth:RequestsPerMinute", 20), Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     });
 }
+builder.Services.AddScoped<CreateCreditCardHandler>();
+builder.Services.AddScoped<CreateCreditCardCommandValidator>();
+builder.Services.AddScoped<ListCreditCardsHandler>();
+builder.Services.AddScoped<GetCreditCardHandler>();
+builder.Services.AddScoped<UpdateCreditCardHandler>();
+builder.Services.AddScoped<UpdateCreditCardCommandValidator>();
+builder.Services.AddScoped<DeleteCreditCardHandler>();
 builder.Services.AddScoped<CreateAccountHandler>();
 builder.Services.AddScoped<CreateAccountCommandValidator>();
 builder.Services.AddScoped<ListAccountsHandler>();
@@ -65,6 +81,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
+var creditCards = app.MapGroup("/credit-cards").RequireAuthorization();
 var accounts = app.MapGroup("/accounts").RequireAuthorization();
 var categories = app.MapGroup("/categories").RequireAuthorization();
 var auth = app.MapGroup("/auth");
@@ -206,6 +223,128 @@ accounts.MapDelete(
     ) =>
     {
         var command = new DeleteAccountCommand(id);
+
+        var deleted = await handler.HandleAsync(
+            command,
+            cancellationToken
+        );
+
+        if (!deleted)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.NoContent();
+    }
+);
+
+creditCards.MapPost(
+    "",
+    async (
+        CreateCreditCardRequest request,
+        CreateCreditCardCommandValidator validator,
+        CreateCreditCardHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var command = new CreateCreditCardCommand(request.Name, request.Limit, request.ClosingDay, request.DueDay);
+        var errors = validator.Validate(command);
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var card = await handler.HandleAsync(command, cancellationToken);
+
+        return Results.Created($"/credit-cards/{card.Id}", card);
+    }
+);
+
+creditCards.MapGet(
+    "",
+    async (
+        ListCreditCardsHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var query = new ListCreditCardsQuery();
+
+        var creditCards = await handler.HandleAsync(query, cancellationToken);
+
+        return Results.Ok(creditCards);
+    }
+);
+
+creditCards.MapGet(
+    "/{id:guid}",
+    async (
+        Guid id,
+        GetCreditCardHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var query = new GetCreditCardQuery(id);
+
+        var card = await handler.HandleAsync(
+            query,
+            cancellationToken
+        );
+
+        if (card is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(card);
+    }
+);
+
+creditCards.MapPut(
+    "/{id:guid}",
+    async (
+        Guid id,
+        UpdateCreditCardRequest request,
+        UpdateCreditCardCommandValidator validator,
+        UpdateCreditCardHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var command = new UpdateCreditCardCommand(
+            id,
+            request.Name, request.Limit, request.ClosingDay, request.DueDay
+        );
+
+        var errors = validator.Validate(command);
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var card = await handler.HandleAsync(
+            command,
+            cancellationToken
+        );
+
+        if (card is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(card);
+    }
+);
+
+creditCards.MapDelete(
+    "/{id:guid}",
+    async (
+        Guid id,
+        DeleteCreditCardHandler handler,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        var command = new DeleteCreditCardCommand(id);
 
         var deleted = await handler.HandleAsync(
             command,

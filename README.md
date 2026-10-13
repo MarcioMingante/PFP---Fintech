@@ -405,3 +405,40 @@ por HTTP real em stack isolada, incluindo cookies HttpOnly/SameSite e revogaçã
 Revisão visual e interações por navegador seguem pendentes.
 
 Implementação estudada a partir da [documentação oficial de JWT bearer](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/configure-jwt-bearer-authentication?view=aspnetcore-10.0).
+
+### Cartões de crédito — fase 14
+
+API autenticada para criar, listar, consultar, atualizar e excluir cartões:
+
+```text
+POST   /credit-cards
+GET    /credit-cards
+GET    /credit-cards/{id}
+PUT    /credit-cards/{id}
+DELETE /credit-cards/{id}
+```
+
+POST e PUT recebem:
+
+```json
+{
+  "name": "Cartão principal",
+  "limit": 5000.50,
+  "closingDay": 25,
+  "dueDay": 5
+}
+```
+
+Resposta inclui `id` e os quatro campos. Nome é normalizado com trim e limitado
+a 100 caracteres. Limite deve ser positivo, com até duas casas decimais e
+16 dígitos inteiros; dias aceitam 1–31. Proprietário vem do JWT; cada usuário
+acessa somente seus cartões. Entrada inválida retorna 400; cartão inexistente
+ou de outro usuário retorna 404. DELETE bem-sucedido retorna 204.
+
+Migration `AddCreditCards` cria tabela, FK, índice e constraints. Aplicação segue
+mesmo workflow de migrations local/Docker documentado acima. Testes usam
+`FINTRACK_TEST_DATABASE` e banco isolado. Decisões em
+[010 — Cartões de crédito](docs/decisions/010-credit-cards.md).
+
+Fase cobre backend. Compras, parcelas, faturas e cálculo de limite disponível
+pertencem às fases seguintes; interface de cartões ainda não implementada.

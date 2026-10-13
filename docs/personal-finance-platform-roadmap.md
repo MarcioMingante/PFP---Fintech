@@ -1058,6 +1058,20 @@ Essa é uma das fases mais importantes do backend.
 
 # Fase 14 — Credit Cards
 
+## Execução no repositório
+
+- [x] Aggregate CreditCard com nome, limite decimal, fechamento e vencimento.
+- [x] Invariantes de domínio, atualização atômica e proprietário imutável.
+- [x] CRUD autenticado em `/credit-cards`, isolado por usuário.
+- [x] Persistência PostgreSQL `numeric(18,2)`, FK, índice e constraints.
+- [x] Migration AddCreditCards e documentação de API/decisão de arquitetura.
+- [x] 101 testes backend passaram, incluindo integração PostgreSQL sem skips.
+
+Fase implementada no backend. Relação User/CreditCard obrigatória. Compras,
+parcelas e faturas serão modeladas nas fases 15/16; limite disponível depende
+desse motor. Interface de cartões ainda não implementada.
+
+
 Agora começamos a parte realmente interessante do domínio financeiro.
 
 ```text

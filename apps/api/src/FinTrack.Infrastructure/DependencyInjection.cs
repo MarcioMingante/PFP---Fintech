@@ -21,6 +21,7 @@ public static class DependencyInjection
     services.AddDbContext<FinTrackDbContext>(options =>
       options.UseNpgsql(connectionString));
 
+    services.AddScoped<FinTrack.Application.CreditCards.ICreditCardRepository, CreditCardRepository>();
     services.AddScoped<IAccountRepository, AccountRepository>();
     services.AddScoped<ICategoryRepository, CategoryRepository>();
 

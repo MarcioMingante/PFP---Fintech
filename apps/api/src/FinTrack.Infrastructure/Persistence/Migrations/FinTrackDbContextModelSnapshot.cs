@@ -70,6 +70,50 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                     b.ToTable("categories", (string)null);
                 });
 
+            modelBuilder.Entity("FinTrack.Domain.CreditCards.CreditCard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ClosingDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("closing_day");
+
+                    b.Property<int>("DueDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("due_day");
+
+                    b.Property<decimal>("Limit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("limit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("credit_cards", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_credit_cards_closing_day", "closing_day BETWEEN 1 AND 31");
+
+                            t.HasCheckConstraint("ck_credit_cards_due_day", "due_day BETWEEN 1 AND 31");
+
+                            t.HasCheckConstraint("ck_credit_cards_limit", "\"limit\" > 0");
+                        });
+                });
+
             modelBuilder.Entity("FinTrack.Domain.Users.RefreshSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -145,6 +189,15 @@ namespace FinTrack.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("FinTrack.Domain.CreditCards.CreditCard", b =>
+                {
+                    b.HasOne("FinTrack.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FinTrack.Domain.Users.RefreshSession", b =>
