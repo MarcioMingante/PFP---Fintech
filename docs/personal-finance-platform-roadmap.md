@@ -887,6 +887,19 @@ Você deve conseguir explicar esse fluxo inteiro sem consultar código.
 
 # Fase 11 — Dockerizar frontend
 
+## Execução no repositório
+
+- [x] Dockerfile Node.js 24 com estágios de dependências, build e runtime.
+- [x] Next.js standalone, assets estáticos e execução sem privilégios.
+- [x] `.dockerignore` excluindo arquivos locais, artefatos e `.env`.
+- [x] Serviço `web` no Compose, healthcheck e dependência de API saudável.
+- [x] `API_URL` em runtime com endereço interno `http://api:8080`.
+- [x] Build, tipos, três testes e fluxo web/API/PostgreSQL validados em stack isolada.
+
+Sistema completo inicia com `docker compose up --build`; instruções no README.
+CRUD da fase 10 e transações da fase 6 continuam pendentes. Dockerização cobre
+funcionalidades atuais, sem antecipar essas implementações.
+
 Agora o projeto inteiro pode rodar via Docker.
 
 Arquitetura:

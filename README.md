@@ -186,3 +186,42 @@ Testes automatizados cobrem contrato de respostas da API e normalização da
 busca. Build, rotas HTTP, redirect, 404, leitura API/PostgreSQL, listas vazias e
 comportamento com API offline foram verificados em stack isolada. Validação
 visual e interações no navegador ainda precisam de revisão manual.
+
+## Fase 11 — Frontend em Docker
+
+Configure `.env` na raiz com base em `.env.example`. `WEB_PORT` usa `3000`
+por padrão. Para iniciar sistema completo:
+
+```bash
+docker compose up --build -d --wait
+```
+
+Frontend: `http://localhost:3000`. API: `http://localhost:5168`.
+Portas podem ser alteradas por `WEB_PORT`, `API_PORT` e `POSTGRES_PORT`.
+Compose aguarda banco saudável, migrations concluídas e API saudável antes
+de iniciar frontend. Para consultar estado, logs e encerrar:
+
+```bash
+docker compose ps
+docker compose logs web api migrate
+docker compose down
+```
+
+Dockerfile frontend separa instalação (`npm ci` com lockfile), build Next.js e
+runtime Node.js 24 Alpine. Saída `standalone` copia somente servidor e dependências
+necessárias, além de `.next/static` e `public`; runtime usa usuário `node`,
+sem privilégios. `.dockerignore` impede inclusão de dependências locais,
+artefatos e arquivos `.env` no contexto. Healthcheck consulta `/dashboard`,
+verificando servidor web; não verifica disponibilidade da API.
+
+Na rede Compose, frontend chama API em `http://api:8080`, que chama PostgreSQL
+em `postgres:5432`. `API_URL` é variável **de runtime**, lida no servidor nas
+páginas dinâmicas; imagem web pode ser reutilizada com outro endereço de API
+sem reconstrução. Não é preciso configurar `API_URL` em build. Variáveis
+`NEXT_PUBLIC_*`, se introduzidas futuramente, são incorporadas ao bundle durante
+build e não devem conter segredos. Browser acessa apenas origem do frontend.
+
+Frontend local da fase 9 continua usando `http://localhost:5168`; variáveis em
+`apps/web/.env.local` ficam fora da imagem Docker. Pare `web` antes de executar
+Next.js local na mesma porta. Volume PostgreSQL persiste após `compose down`.
+Dockerização não implementa CRUD pendente da fase 10 nem transações da fase 6.

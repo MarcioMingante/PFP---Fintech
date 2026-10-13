@@ -1,4 +1,18 @@
 services:
+  web:
+    image: fintrack-web:local
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:8080
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
   api:
     image: fintrack-api:local
     build:
