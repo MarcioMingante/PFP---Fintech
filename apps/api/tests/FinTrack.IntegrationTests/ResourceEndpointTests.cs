@@ -9,7 +9,7 @@ public sealed class ResourceEndpointTests(PostgresApiFixture fixture) : IClassFi
 {
     private sealed record Resource(Guid Id, string Name);
 
-    [PostgresTheory]
+    [Theory]
     [InlineData("/accounts")]
     [InlineData("/categories")]
     public async Task CreateReadUpdate_PersistsAcrossRequests(string route)
@@ -33,7 +33,7 @@ public sealed class ResourceEndpointTests(PostgresApiFixture fixture) : IClassFi
         Assert.Equal(new Resource(resource.Id, "Atualizado"), await reader.GetFromJsonAsync<Resource>($"{route}/{resource.Id}"));
     }
 
-    [PostgresTheory]
+    [Theory]
     [InlineData("/accounts")]
     [InlineData("/categories")]
     public async Task InvalidCreateAndUpdate_ReturnValidationProblemWithoutChangingData(string route)
@@ -51,7 +51,7 @@ public sealed class ResourceEndpointTests(PostgresApiFixture fixture) : IClassFi
         Assert.Equal(resource, await client.GetFromJsonAsync<Resource>($"{route}/{resource.Id}"));
     }
 
-    [PostgresTheory]
+    [Theory]
     [InlineData("/accounts")]
     [InlineData("/categories")]
     public async Task MissingResource_GetAndUpdateReturnNotFound(string route)
@@ -64,7 +64,7 @@ public sealed class ResourceEndpointTests(PostgresApiFixture fixture) : IClassFi
         Assert.Equal(HttpStatusCode.NotFound, update.StatusCode);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task DeleteAccount_RemovesPersistedAccountAndRepeatedDeleteReturnsNotFound()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();

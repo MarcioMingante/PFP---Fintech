@@ -71,32 +71,34 @@ incluir testes pertinentes, organizados em Arrange / Act / Assert.
   validação sem alteração dos dados.
 - ArchitectureTests verifica dependências entre camadas.
 
-Para integração PostgreSQL, use uma instância local exclusiva de testes:
+Integração PostgreSQL usa Testcontainers automaticamente (fase 19). Com Docker
+ativo e acessível ao usuário:
 
 ```bash
-docker run -d --rm --name fintrack-tests \
-  -e POSTGRES_USER=fintrack_test \
-  -e POSTGRES_PASSWORD=local_test_password \
-  -p 127.0.0.1:55432:5432 postgres:17-alpine
-docker exec fintrack-tests pg_isready -U fintrack_test
-export FINTRACK_TEST_DATABASE='Host=127.0.0.1;Port=55432;Database=postgres;Username=fintrack_test;Password=local_test_password'
+docker info
 dotnet test apps/api/FinTrack.sln -m:1
-docker stop fintrack-tests
-unset FINTRACK_TEST_DATABASE
+# Somente integração:
+dotnet test apps/api/tests/FinTrack.IntegrationTests -m:1
 ```
 
-Espere `pg_isready` indicar disponibilidade antes de executar testes. Fixture
-cria banco com nome aleatório, aplica migrations e remove somente esse banco
-no encerramento; usuário precisa de permissão para criar bancos. Cada request
-usa seu próprio escopo de persistência. Falhas de conexão ou migrations falham
-a suíte quando variável está configurada. Sem `FINTRACK_TEST_DATABASE`, testes
-PostgreSQL aparecem como ignorados; demais testes continuam executando.
-Não configure credenciais do banco pessoal ou de produção.
+Não é necessário iniciar Compose, escolher porta ou configurar banco externo.
+Cada classe recebe PostgreSQL `postgres:17-alpine` em container próprio, porta
+aleatória e credenciais efêmeras. Fixture espera prontidão, aplica migrations,
+valida upgrade com registros legados e encerra API antes de remover container.
+Cada cenário cria usuário próprio; testes de migração usam somente seed fixo.
+Sem Docker acessível ou se migrations falharem, suíte falha em vez de ignorar
+integração. `FINTRACK_TEST_DATABASE` não é mais utilizado.
+
+Sem Docker, execute somente testes de domínio/aplicação e arquitetura:
+
+```bash
+make test-fast
+```
 
 Base de Transactions para receitas/despesas recorrentes existe na fase 17.
 CRUD manual, transferências e saldo incremental da fase 6 permanecem pendentes;
 seus testes de domínio e atomicidade deverão acompanhar implementação.
-Testcontainers permanece previsto para fase 19.
+Testcontainers implementado na fase 19.
 
 ## Fase 8 — API em Docker
 
@@ -439,7 +441,7 @@ ou de outro usuário retorna 404. DELETE bem-sucedido retorna 204.
 
 Migration `AddCreditCards` cria tabela, FK, índice e constraints. Aplicação segue
 mesmo workflow de migrations local/Docker documentado acima. Testes usam
-`FINTRACK_TEST_DATABASE` e banco isolado. Decisões em
+Testcontainers e banco isolado por classe. Decisões em
 [010 — Cartões de crédito](docs/decisions/010-credit-cards.md).
 
 Fase cobre backend. Compras e parcelas estão na fase 15 abaixo; faturas e
@@ -614,3 +616,21 @@ esbarrou em restrição de sockets deste ambiente. Smoke HTTP confirmou
 dashboard autenticado com dados reais da API isolada, recuperação de data
 inválida e redirecionamento sem sessão. Revisão visual/interação dos gráficos
 no navegador pendente: nenhum navegador disponível na sessão.
+
+### Testcontainers — fase 19
+
+```bash
+make test-api          # Toda suíte backend, com Docker
+make test-integration  # Somente integração, com Docker
+make test-fast         # Unitários e arquitetura, sem Docker
+```
+
+Validação: 150 testes backend passaram, incluindo 48 de integração, sem skips
+e sem FINTRACK_TEST_DATABASE. Containers temporários removidos automaticamente.
+Novo teste verifica isolamento físico e encerramento independente de duas
+fixtures. Não há banco externo ou porta fixa para configurar.
+
+POST manual `/transactions` e transferências ainda dependem da fase 6;
+transações geradas por recorrências já são testadas. Decisão em
+[015 — Testcontainers](docs/decisions/015-testcontainers-integration.md), baseada
+no [módulo oficial PostgreSQL](https://dotnet.testcontainers.org/modules/postgres/).

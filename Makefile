@@ -2,9 +2,12 @@ COMPOSE ?= docker compose
 API_PORT ?= 5168
 WEB_PORT ?= 3000
 
-.PHONY: help dev-db dev-migrate dev-api dev-web full status stop
+.PHONY: help dev-db dev-migrate dev-api dev-web full status stop test-api test-integration test-fast
 
 help:
+	@echo "test-api         Executa toda suíte backend com Testcontainers"
+	@echo "test-integration Executa somente integração (Docker necessário)"
+	@echo "test-fast        Executa unitários e arquitetura sem Docker"
 	@echo "dev-db       Para web/API Docker e inicia somente PostgreSQL"
 	@echo "dev-migrate  Aplica migrations com API local e conexão configurada"
 	@echo "dev-api      Executa API local com dotnet watch"
@@ -34,3 +37,14 @@ status:
 
 stop:
 	$(COMPOSE) down
+
+
+test-api:
+	dotnet test apps/api/FinTrack.sln -m:1
+
+test-integration:
+	dotnet test apps/api/tests/FinTrack.IntegrationTests -m:1
+
+test-fast:
+	dotnet test apps/api/tests/FinTrack.UnitTests -m:1
+	dotnet test apps/api/tests/FinTrack.ArchitectureTests -m:1

@@ -1395,6 +1395,26 @@ Read model
 
 # Fase 19 — Integration Tests com Testcontainers
 
+## Execução no repositório
+
+- [x] Testcontainers.PostgreSql 4.16.0 com PostgreSQL 17 Alpine.
+- [x] Container por classe, porta aleatória e credenciais efêmeras.
+- [x] Startup com prontidão, migrations e upgrade com dados legados.
+- [x] Encerramento de API e remoção automática, inclusive em falha parcial.
+- [x] Fact/Theory sem dependência de FINTRACK_TEST_DATABASE e sem skips silenciosos.
+- [x] Cobertura dos módulos existentes: contas, autenticação, compras, faturas,
+  recorrências, transações geradas e dashboard.
+- [x] Teste de isolamento físico de duas fixtures e encerramento independente.
+- [x] Makefile e documentação de execução com/sem Docker.
+- [x] 150 testes backend passaram (48 integração), nenhum ignorado; containers
+  removidos automaticamente após execução.
+- [ ] POST manual `/transactions` e transfers: dependem de endpoints ainda
+  ausentes da fase 6. Geração de transações recorrentes já possui cobertura.
+
+Infraestrutura da fase implementada para funcionalidades existentes. Docker
+ativo é requisito de integração; falhas de ambiente/migration fazem suíte falhar.
+
+
 Agora você começa a usar containers também nos testes.
 
 Fluxo:

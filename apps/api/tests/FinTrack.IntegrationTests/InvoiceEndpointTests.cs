@@ -26,7 +26,7 @@ public sealed class InvoiceEndpointTests(PostgresApiFixture fixture) : IClassFix
         return (await created.Content.ReadFromJsonAsync<PurchaseDto>())!;
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Invoices_GroupInstallmentsAndExposeTotalsCurrentFutureAndLimit()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -57,7 +57,7 @@ public sealed class InvoiceEndpointTests(PostgresApiFixture fixture) : IClassFix
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"{route}/{Guid.NewGuid()}")).StatusCode);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task EmptyCycle_IsReadOnlyAndLimitCanShowExcess()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -79,7 +79,7 @@ public sealed class InvoiceEndpointTests(PostgresApiFixture fixture) : IClassFix
         Assert.Single((await client.GetFromJsonAsync<InvoiceDto[]>(route))!);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task CalendarChange_PreservesInvoicesAndCreatesSeparateSnapshotCycles()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -99,7 +99,7 @@ public sealed class InvoiceEndpointTests(PostgresApiFixture fixture) : IClassFix
         Assert.Equal(60m, summary.UsedLimit);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task ConcurrentDistinctPurchases_ShareOneInvoiceWithoutLosingAmounts()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -112,7 +112,7 @@ public sealed class InvoiceEndpointTests(PostgresApiFixture fixture) : IClassFix
         Assert.Equal(8, invoice.Items.Select(item => item.InstallmentId).Distinct().Count());
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Endpoints_ProtectOwnershipAndValidateReferenceDate()
     {
         using var owner = await fixture.CreateAuthenticatedClientAsync();
@@ -133,7 +133,7 @@ public sealed class InvoiceEndpointTests(PostgresApiFixture fixture) : IClassFix
         Assert.Equal(HttpStatusCode.NotFound, (await owner.GetAsync($"/credit-cards/{Guid.NewGuid()}/invoices")).StatusCode);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Migration_BackfillsPhase15DataAndReapplicationIsIdempotent()
     {
         using var scope = fixture.Services.CreateScope();

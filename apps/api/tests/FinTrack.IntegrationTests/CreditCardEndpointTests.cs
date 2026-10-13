@@ -9,7 +9,7 @@ public sealed class CreditCardEndpointTests(PostgresApiFixture fixture) : IClass
 {
     private const string Route = "/credit-cards";
 
-    [PostgresFact]
+    [Fact]
     public async Task Crud_PersistsPreciseAmountsAndDeletes()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -32,7 +32,7 @@ public sealed class CreditCardEndpointTests(PostgresApiFixture fixture) : IClass
         Assert.Equal(HttpStatusCode.NotFound, (await client.PutAsJsonAsync(url, new { Name = "Novo", Limit = 100m, ClosingDay = 1, DueDay = 31 })).StatusCode);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Ownership_ProtectsEveryOperation()
     {
         using var owner = await fixture.CreateAuthenticatedClientAsync();
@@ -54,7 +54,7 @@ public sealed class CreditCardEndpointTests(PostgresApiFixture fixture) : IClass
         Assert.Equal(card, await owner.GetFromJsonAsync<CreditCardDto>(url));
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task InvalidInput_ReturnsFieldErrorsAndPreservesData()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();

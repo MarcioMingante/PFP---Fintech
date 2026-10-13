@@ -16,7 +16,7 @@ public sealed class AuthenticationTests(PostgresApiFixture fixture) : IClassFixt
 {
     private sealed record Resource(Guid Id, string Name);
 
-    [PostgresFact]
+    [Fact]
     public async Task RegisterLoginRefreshLogout_EnforcesCredentialAndSessionLifecycle()
     {
         using var client = fixture.CreateClient();
@@ -60,7 +60,7 @@ public sealed class AuthenticationTests(PostgresApiFixture fixture) : IClassFixt
         Assert.All(sessions, session => { Assert.Equal(64, session.TokenHash.Length); Assert.NotEqual(initial.RefreshToken, session.TokenHash); });
     }
 
-    [PostgresTheory]
+    [Theory]
     [InlineData("/accounts")]
     [InlineData("/categories")]
     public async Task DifferentUsers_CannotListReadChangeOrDeleteOthersResources(string route)
@@ -84,7 +84,7 @@ public sealed class AuthenticationTests(PostgresApiFixture fixture) : IClassFixt
         Assert.Equal(resource, await owner.GetFromJsonAsync<Resource>($"{route}/{resource.Id}"));
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task ConcurrentRefresh_OnlyOneRequestConsumesToken()
     {
         using var client = fixture.CreateClient();
@@ -101,7 +101,7 @@ public sealed class AuthenticationTests(PostgresApiFixture fixture) : IClassFixt
         finally { foreach (var response in responses) response.Dispose(); }
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task BearerValidation_RejectsTamperingWrongIssuerAudienceAndExpiredTokens()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -120,7 +120,7 @@ public sealed class AuthenticationTests(PostgresApiFixture fixture) : IClassFixt
         }
     }
 
-    [PostgresTheory]
+    [Theory]
     [InlineData("GET", "/accounts")]
     [InlineData("POST", "/accounts")]
     [InlineData("GET", "/accounts/44444444-4444-4444-8444-444444444444")]
@@ -139,7 +139,7 @@ public sealed class AuthenticationTests(PostgresApiFixture fixture) : IClassFixt
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task ExpiredSession_RejectsAccessAndRefresh()
     {
         using var client = fixture.CreateClient();
@@ -157,7 +157,7 @@ public sealed class AuthenticationTests(PostgresApiFixture fixture) : IClassFixt
         Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task LegacyUnownedData_RemainsStoredButCannotBeClaimedByNewUser()
     {
         var id = PostgresApiFixture.LegacyAccountId;

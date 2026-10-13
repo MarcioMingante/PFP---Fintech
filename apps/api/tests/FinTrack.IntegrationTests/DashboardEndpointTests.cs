@@ -22,7 +22,7 @@ public sealed class DashboardEndpointTests(PostgresApiFixture fixture) : IClassF
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Summary_AggregatesCashFlowCategoriesInvoicesAndFutureCommitments()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -60,7 +60,7 @@ public sealed class DashboardEndpointTests(PostgresApiFixture fixture) : IClassF
         Assert.Equal(0m, (await client.GetFromJsonAsync<DashboardSummaryDto>("/dashboard/summary?asOf=2023-12-31"))!.CurrentBalance);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Summary_IsEmptyForOtherUsersAndRequiresAuthentication()
     {
         using var owner = await fixture.CreateAuthenticatedClientAsync();

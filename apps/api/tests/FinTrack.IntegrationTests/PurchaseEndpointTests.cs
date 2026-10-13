@@ -16,7 +16,7 @@ public sealed class PurchaseEndpointTests(PostgresApiFixture fixture) : IClassFi
         return (await response.Content.ReadFromJsonAsync<CreditCardDto>())!.Id;
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Create_PersistsScheduleAndReplayDoesNotDuplicate()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -41,7 +41,7 @@ public sealed class PurchaseEndpointTests(PostgresApiFixture fixture) : IClassFi
         Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/credit-cards/{cardId}")).StatusCode);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task ConcurrentReplay_IsAtomic()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -57,7 +57,7 @@ public sealed class PurchaseEndpointTests(PostgresApiFixture fixture) : IClassFi
         Assert.Equal(100m, list[0].Installments.Sum(item => item.Amount));
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task OwnershipAndValidation_PreventUnauthorizedOrPartialWrites()
     {
         using var owner = await fixture.CreateAuthenticatedClientAsync();

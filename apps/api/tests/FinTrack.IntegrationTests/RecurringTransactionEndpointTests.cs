@@ -32,7 +32,7 @@ public sealed class RecurringTransactionEndpointTests(PostgresApiFixture fixture
         return (await response.Content.ReadFromJsonAsync<RecurringGenerationResult>())!;
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task MonthlyGeneration_PersistsIncomeExpenseAndRecoversMissedMonths()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -66,7 +66,7 @@ public sealed class RecurringTransactionEndpointTests(PostgresApiFixture fixture
         Assert.Equal(HttpStatusCode.Conflict, (await client.DeleteAsync($"/accounts/{account}")).StatusCode);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task ConcurrentGeneration_ProducesEachOccurrenceOnlyOnce()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -79,7 +79,7 @@ public sealed class RecurringTransactionEndpointTests(PostgresApiFixture fixture
         Assert.Equal(3, transactions.Select(item => (item.RecurringTransactionId, item.OccurredOn)).Distinct().Count());
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task BoundedCatchUp_ContinuesFromCheckpoint()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -96,7 +96,7 @@ public sealed class RecurringTransactionEndpointTests(PostgresApiFixture fixture
         Assert.Equal(132, (await client.GetFromJsonAsync<TransactionDto[]>("/transactions"))!.Length);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Deactivation_PreservesGeneratedHistoryAndStopsFutureWork()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
@@ -115,7 +115,7 @@ public sealed class RecurringTransactionEndpointTests(PostgresApiFixture fixture
         Assert.Equal(new DateOnly(2024, 2, 29), (await client.GetFromJsonAsync<RecurringTransactionDto>($"{Route}/{rule.Id}"))!.NextOccurrenceDate);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Ownership_ProtectsRulesReferencesAndGeneratedTransactions()
     {
         using var owner = await fixture.CreateAuthenticatedClientAsync();
@@ -143,7 +143,7 @@ public sealed class RecurringTransactionEndpointTests(PostgresApiFixture fixture
         Assert.True((await owner.GetFromJsonAsync<RecurringTransactionDto>($"{Route}/{rule.Id}"))!.IsActive);
     }
 
-    [PostgresFact]
+    [Fact]
     public async Task Validation_RejectsInvalidMoneyDatesTypeAndFutureGeneration()
     {
         using var client = await fixture.CreateAuthenticatedClientAsync();
