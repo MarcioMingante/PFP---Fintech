@@ -4,8 +4,8 @@ Personal Finance Platform
 Projeto de portfólio e uso pessoal, sem serviços pagos obrigatórios. Ambiente
 funcional completo executa localmente via Docker Compose; hospedagem pública
 contínua e provisionamento AWS não fazem parte da entrega. Demonstração por
-screenshots, vídeo e setup reproduzível. CI/registry públicos gratuitos são
-opcionais; execução e build locais permanecem disponíveis.
+screenshots, vídeo e setup reproduzível. CI público gratuito é opcional;
+releases e imagens permanecem locais, sem GHCR.
 
 Diretrizes e fases futuras no
 [roadmap](docs/personal-finance-platform-roadmap.md#restrição-de-custo-e-publicação).
@@ -171,6 +171,22 @@ Git; lockfile fica versionado. Sem AWS, backend remoto, HCP Terraform ou GHCR.
 Exercício opcional: não substitui `make full` nem gerencia recursos Compose.
 Validação: fmt/validate, plan/apply, HTTP e destroy aprovados; segundo plan sem
 mudanças. Containers existentes preservados. Terraform CLI não foi instalado globalmente.
+
+## Fase 31 — Release e entrega local
+
+[Procedimento de release](docs/releases/local-release.md): versionamento, imagens
+locais, atualização manual, migrations, backup privado e retorno compatível.
+[Release v0.1.0](docs/releases/v0.1.0.md) inclui screenshots e vídeo com dados fictícios.
+Sem GHCR, ECR, ECS ou deploy automático.
+
+```bash
+make images-run IMAGE_TAG=v0.1.0
+# Antes de atualizar, siga procedimento para suspender escritas e drenar filas:
+make backup-local BACKUP=backups/pre-atualizacao.dump
+```
+
+Backup não sobrescreve arquivos. Restore deve ser ensaiado em banco vazio isolado;
+trocar imagens não reverte migrations. Dependências Docker precisam estar locais.
 
 ## Backend local
 

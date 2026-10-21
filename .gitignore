@@ -78,3 +78,7 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+
+# Local database backups contain private data.
+/backups/
+*.dump

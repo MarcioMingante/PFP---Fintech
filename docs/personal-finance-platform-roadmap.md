@@ -1979,7 +1979,7 @@ Verificações gratuitas
    ↓
 Build de imagens
    ↓
-GHCR público (opcional)
+Transporte local save/load (opcional)
    ↓
 Atualização manual do ambiente local
 ```
@@ -1990,6 +1990,19 @@ para deploy automático. Não fazer push ECR ou deploy ECS.
 
 Entrega de portfólio: release versionada, screenshots, vídeo demonstrativo e
 instruções para executar stack. Hospedagem pública contínua não é requisito.
+
+## Entrega aplicada
+
+- [x] Release local v0.1.0, imagens versionadas e tag Git local.
+- [x] Procedimento de atualização, migrations e retorno compatível.
+- [x] Backup privado sem sobrescrita e restore validado em banco vazio.
+- [x] Screenshots e vídeo demonstrativo com dados fictícios.
+- [x] Build e validação direcionada em stack Compose descartável.
+- [x] Sem GHCR, ECR, ECS ou deploy automático.
+
+Release: [v0.1.0](releases/v0.1.0.md).
+Procedimento: [Release local](releases/local-release.md).
+Decisão: [027 — Release local](decisions/027-local-release.md).
 
 ---
 

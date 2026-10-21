@@ -15,6 +15,8 @@ TF_LOCAL = env -u DOCKER_CONTEXT -u DOCKER_HOST $(TERRAFORM) -chdir=ops/terrafor
 .PHONY: iac-init iac-validate iac-plan iac-apply iac-destroy
 
 help:
+	@echo "backup-local    Backup PostgreSQL privado (BACKUP=backups/fintrack.dump)"
+	@echo "demo-release    Grava demonstração em stack descartável explicitamente informada"
 	@echo "iac-init/validate/plan/apply/destroy  Exercício Terraform Docker isolado"
 	@echo "test-messaging  Valida mensageria com testes direcionados (Docker necessário)"
 	@echo "setup           Cria .env local com segredos aleatórios, sem sobrescrever"
@@ -145,3 +147,12 @@ ci-api:
 
 ci-e2e:
 	CI=true npm --prefix apps/web run e2e
+
+.PHONY: backup-local demo-release
+BACKUP ?= backups/fintrack.dump
+backup-local:
+	mkdir -p "$(dir $(BACKUP))"
+	sh scripts/backup-local.sh "$(BACKUP)" $(COMPOSE)
+
+demo-release:
+	node apps/web/scripts/record-demo.mjs
