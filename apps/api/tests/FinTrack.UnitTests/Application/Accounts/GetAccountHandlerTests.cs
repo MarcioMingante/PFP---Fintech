@@ -54,6 +54,22 @@ public sealed class GetAccountHandlerTests
 
             return Task.FromResult(result);
         }
+
+        public Task UpdateAsync(
+            Account account,
+            CancellationToken cancellationToken = default
+        )
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task DeleteAsync(
+            Account account,
+            CancellationToken cancellationToken = default
+        )
+        {
+            throw new NotSupportedException();
+        }
     }
 
     [Fact]

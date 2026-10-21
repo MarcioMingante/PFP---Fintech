@@ -11,9 +11,10 @@ public sealed class AccountRepository(FinTrackDbContext dbContext) : IAccountRep
     CancellationToken cancellationToken = default
   )
   {
+    account.AssignOwner(dbContext.CurrentUserId ?? throw new UnauthorizedAccessException());
     dbContext.Accounts.Add(account);
 
-    await dbContext.SaveChangesAsync(cancellationToken); 
+    await dbContext.SaveChangesAsync(cancellationToken);
   }
 
   public async Task<IReadOnlyList<Account>> ListAsync(
@@ -37,5 +38,31 @@ public sealed class AccountRepository(FinTrackDbContext dbContext) : IAccountRep
         account => account.Id == id,
         cancellationToken
       );
+  }
+
+  public async Task UpdateAsync(
+    Account account,
+    CancellationToken cancellationToken = default
+  )
+  {
+    dbContext.Accounts.Update(account);
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  public async Task DeleteAsync(
+    Account account,
+    CancellationToken cancellationToken = default
+  )
+  {
+    dbContext.Accounts.Remove(account);
+
+    try { await dbContext.SaveChangesAsync(cancellationToken); }
+    catch (DbUpdateException exception) when (exception.InnerException is Npgsql.PostgresException
+        { SqlState: Npgsql.PostgresErrorCodes.ForeignKeyViolation })
+    {
+      throw new AccountInUseException(exception);
+    }
+
   }
 }

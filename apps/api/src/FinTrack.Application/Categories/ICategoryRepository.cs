@@ -1,0 +1,25 @@
+using FinTrack.Domain.Categories;
+
+namespace FinTrack.Application.Categories;
+
+public interface ICategoryRepository
+{
+  Task AddAsync(
+    Category category,
+    CancellationToken cancellationToken = default
+  );
+
+  Task<IReadOnlyList<Category>> ListAsync(
+    CancellationToken cancellationToken = default
+  );
+
+  Task<Category?> GetByIdAsync(
+    Guid id,
+    CancellationToken cancellationToken = default
+  );
+
+  Task UpdateAsync(
+    Category category,
+    CancellationToken cancellationToken = default
+  );
+}

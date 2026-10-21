@@ -14,6 +14,9 @@ docs/personal-finance-platform-roadmap.md
 *.log
 .DS_Store
 
+.AGENTS.md
+AGENTS.md
+
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -48,6 +51,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -55,3 +59,26 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Isolated browser test artifacts
+.next-e2e/
+playwright-report/
+test-results/
+
+# Terraform local lab: state, plans and user overrides never enter Git.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Local database backups contain private data.
+/backups/
+*.dump

@@ -11,7 +11,8 @@ Construir uma plataforma financeira completa que sirva simultaneamente como:
 - estudo de Docker;
 - prática de testes;
 - introdução prática a System Design;
-- base para AWS, CI/CD e observabilidade.
+- estudo de arquitetura cloud, CI/CD e observabilidade;
+- uso pessoal e demonstração de portfólio, sem finalidade comercial nem serviços pagos obrigatórios.
 
 A stack principal continua:
 
@@ -31,7 +32,7 @@ Docker + Docker Compose
 Testing
 xUnit + Testcontainers + Playwright
 
-Cloud
+Cloud (estudo conceitual, sem provisionamento)
 AWS
 
 Complementos futuros
@@ -42,9 +43,42 @@ Terraform
 GitHub Actions
 ```
 
+## Restrição de custo e publicação
+
+O caminho obrigatório do projeto não exige mensalidades, serviços cobrados por
+consumo, créditos promocionais ou períodos de teste. Uso principal: pessoal e
+portfólio. Ambiente funcional completo executa localmente com Docker Compose.
+
+- Não provisionar AWS nem contratar banco, cache, broker ou observabilidade gerenciados.
+- Não depender de domínio pago, VPS ou hospedagem paga para concluir o portfólio.
+- Demonstração pública: README, screenshots, vídeo gravado localmente e instruções
+  reproduzíveis. Uma aplicação pública sempre ligada não é requisito de entrega.
+- CI remoto usa repositório público e runners padrão gratuitos. Se repositório
+  permanecer privado, executar verificações localmente como caminho sem cobrança.
+- Imagens públicas no GHCR são opcionais; build local continua suficiente.
+- Dados publicados em screenshots, vídeos e exemplos devem ser fictícios.
+- Antes de habilitar serviços externos, conferir condições gratuitas vigentes.
+  Se deixarem de ser gratuitas, voltar ao fluxo local, sem migração automática
+  para plano pago. Publicação de repositório/pacotes depende de decisão explícita
+  do proprietário; este planejamento não altera sua visibilidade.
+
+Referências de gratuidade, verificadas em 13/10/2026:
+[GitHub Actions](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+e [GitHub Packages/GHCR](https://docs.github.com/en/billing/concepts/product-billing/github-packages).
+
 ---
 
 # Fase 0 — Produto e planejamento
+
+## Execução no repositório — consolidação M0
+
+- [x] Visão do produto, escopo e restrições.
+- [x] Requisitos com critérios de aceitação e evidências.
+- [x] Regras de propriedade, dinheiro, saldo, transferências e calendário.
+- [x] Casos de uso com alternativas e limites explícitos.
+
+Documentos: [visão](product/vision.md), [requisitos](product/requirements.md),
+[regras](product/business-rules.md) e [casos de uso](product/use-cases.md).
 
 Antes de escrever código, defina o que o sistema realmente precisa resolver.
 
@@ -526,6 +560,17 @@ DTO != Domain Entity
 
 # Fase 6 — Categories e Transactions
 
+## Execução no repositório — consolidação M3
+
+- [x] Categorias e receitas/despesas manuais/recorrentes existentes.
+- [x] Transferências entre contas próprias diferentes em registro atômico.
+- [x] Idempotência por usuário/chave com proteção de concorrência e propriedade.
+- [x] Saldo por conta derivado do histórico; transferência não infla renda/despesa.
+- [x] API/web e testes de domínio, concorrência, rollback e integração.
+
+Transferências usam `/transfers`; saldos, `/accounts/balances`. Saldo negativo
+é permitido; sem campo de saldo inicial. [ADR 028](decisions/028-transfers-and-balances.md).
+
 Depois:
 
 ```text
@@ -595,6 +640,17 @@ Tudo ou nada
 
 # Fase 7 — Testes desde cedo
 
+## Execução no repositório
+
+- [x] Testes unitários de contas, categorias, validadores e handlers.
+- [x] Integração API/PostgreSQL real com banco isolado e migrations.
+- [x] Cobertura HTTP de persistência, validação, 404 e exclusão de conta.
+- [x] Instruções de execução e política de testes para novas features no README.
+- [x] Testes de transações manuais e transferências: domínio e integrações acrescentados nas entregas correspondentes.
+
+Base de testes ampliada para transações/transferências na consolidação M3.
+Testcontainers foi introduzido na fase 19.
+
 Os testes não ficam mais apenas no final.
 
 A partir dessa fase, toda nova feature importante deve ter testes.
@@ -652,6 +708,18 @@ Database/API
 ---
 
 # Fase 8 — Dockerizar API
+
+## Execução no repositório
+
+- [x] Dockerfile .NET 10 com build em múltiplos estágios e runtime sem privilégios.
+- [x] API e PostgreSQL no Compose com conexão via `Host=postgres`.
+- [x] Migrations em container provisório antes de iniciar API.
+- [x] Healthchecks HTTP/PostgreSQL e documentação de execução local.
+- [x] Build Docker, startup com banco vazio, migrations idempotentes, persistência
+  após reinício e suíte de 62 testes validados em ambiente isolado.
+
+Dockerização aplicada aos módulos existentes. Transactions da fase 6 permanece
+pendente; não impede execução da infraestrutura desta fase.
 
 Agora a API já possui:
 
@@ -725,6 +793,20 @@ Container Health Check
 ---
 
 # Fase 9 — Frontend Skeleton
+
+## Execução no repositório
+
+- [x] Estrutura Next.js/TypeScript com diretórios previstos.
+- [x] Rotas `/dashboard`, `/accounts`, `/transactions` e `/categories`.
+- [x] Layout responsivo, navegação ativa e metadados em português.
+- [x] Server/Client Components, React State e formulário de busca.
+- [x] Serviço HTTP configurável, schemas Zod e leitura de contas/categorias.
+- [x] Estados de carregamento, erro, lista vazia e página não encontrada.
+- [x] Lint, typecheck, três testes automatizados, build e smoke HTTP validados.
+
+Frontend executa localmente contra API Docker. Escrita/CRUD permanece na fase
+10; transações aguardam backend da fase 6. Revisão visual no navegador ainda
+não realizada: nenhum navegador disponível na sessão de implementação.
 
 Agora criamos:
 
@@ -806,6 +888,16 @@ Error State
 
 # Fase 10 — Frontend + backend integration
 
+## Execução no repositório — consolidação M4
+
+- [x] Listar, criar, editar e excluir contas no navegador.
+- [x] Confirmação/cancelamento, validação e mensagem para conta em uso.
+- [x] Listar/criar receitas e despesas, transferir e visualizar saldos.
+- [x] Persistência, erros e precisão validados em E2E desktop/mobile.
+
+Entrega atende fluxos enumerados nesta fase. Gestão web de outras entidades e
+edição/exclusão de lançamentos continuam evoluções separadas.
+
 Agora implementamos:
 
 ```text
@@ -850,6 +942,19 @@ Você deve conseguir explicar esse fluxo inteiro sem consultar código.
 
 # Fase 11 — Dockerizar frontend
 
+## Execução no repositório
+
+- [x] Dockerfile Node.js 24 com estágios de dependências, build e runtime.
+- [x] Next.js standalone, assets estáticos e execução sem privilégios.
+- [x] `.dockerignore` excluindo arquivos locais, artefatos e `.env`.
+- [x] Serviço `web` no Compose, healthcheck e dependência de API saudável.
+- [x] `API_URL` em runtime com endereço interno `http://api:8080`.
+- [x] Build, tipos, três testes e fluxo web/API/PostgreSQL validados em stack isolada.
+
+Sistema completo inicia com `docker compose up --build`; instruções no README.
+CRUD da fase 10 e transações da fase 6 continuam pendentes. Dockerização cobre
+funcionalidades atuais, sem antecipar essas implementações.
+
 Agora o projeto inteiro pode rodar via Docker.
 
 Arquitetura:
@@ -890,6 +995,20 @@ Container networking
 
 # Fase 12 — Development Compose vs Full Compose
 
+## Execução no repositório
+
+- [x] Makefile com comandos de desenvolvimento, migrations locais e ambiente completo.
+- [x] `dev-db` para web/API Docker e mantém somente PostgreSQL executando.
+- [x] `dev-api` com dotnet watch e `dev-web` com npm run dev.
+- [x] Portas locais configuráveis e instruções de conexão via User Secrets.
+- [x] `full`, `status` e `stop` para execução completa e encerramento sem remover dados.
+- [x] Alternância Docker/local e persistência verificadas em stack isolada.
+
+Workflow documentado no README. Mesmo Compose e volume atendem os dois modos;
+separação adicional de arquivos Compose permanece opcional para evolução futura.
+Validação de nova instância Next.js limitada por servidor dev já ativo no checkout;
+comando conferido e servidor existente preservado.
+
 Aqui vale organizar o workflow.
 
 Durante desenvolvimento:
@@ -923,6 +1042,22 @@ Mas não precisa fazer isso imediatamente.
 ---
 
 # Fase 13 — Authentication
+
+## Execução no repositório
+
+- [x] Register/Login com validação, e-mail único e password hashing.
+- [x] JWT validando assinatura, issuer, audience e expiração.
+- [x] Refresh token persistido como hash, com rotação atômica e validade absoluta.
+- [x] Logout revogando sessão e access token imediatamente.
+- [x] Endpoints protegidos e isolamento de contas/categorias por usuário.
+- [x] Migration preservando registros legados sem atribuição automática.
+- [x] Frontend com login, cadastro, cookies HttpOnly e renovação por POST.
+- [x] Configuração local/Docker, documentação e decisão de arquitetura.
+- [x] 86 testes backend, 5 frontend, build e smoke HTTP de autenticação validados.
+
+Transações aguardam fase 6 e deverão respeitar mesma propriedade. Registros
+legados sem usuário ficam inacessíveis até atribuição explícita. Revisão visual
+no navegador permanece pendente; fluxo web foi validado por HTTP.
 
 Agora implemente autenticação.
 
@@ -978,6 +1113,20 @@ Essa é uma das fases mais importantes do backend.
 
 # Fase 14 — Credit Cards
 
+## Execução no repositório
+
+- [x] Aggregate CreditCard com nome, limite decimal, fechamento e vencimento.
+- [x] Invariantes de domínio, atualização atômica e proprietário imutável.
+- [x] CRUD autenticado em `/credit-cards`, isolado por usuário.
+- [x] Persistência PostgreSQL `numeric(18,2)`, FK, índice e constraints.
+- [x] Migration AddCreditCards e documentação de API/decisão de arquitetura.
+- [x] 101 testes backend passaram, incluindo integração PostgreSQL sem skips.
+
+Fase implementada no backend. Relação User/CreditCard obrigatória. Compras,
+parcelas e faturas serão modeladas nas fases 15/16; limite disponível depende
+desse motor. Interface de cartões ainda não implementada.
+
+
 Agora começamos a parte realmente interessante do domínio financeiro.
 
 ```text
@@ -1021,6 +1170,24 @@ Nunca use `float` para dinheiro.
 ---
 
 # Fase 15 — Installments
+
+## Execução no repositório
+
+- [x] Purchase e Installment com valores decimal e parcelas imutáveis.
+- [x] Geração de 1–120 parcelas com soma exata e distribuição de centavos.
+- [x] Calendário com fechamento, vencimento, meses curtos e anos bissextos.
+- [x] Snapshot dos dias do cartão preservando calendário histórico.
+- [x] POST/GET autenticados em `/credit-cards/{id}/purchases`.
+- [x] Idempotência por cartão/chave, incluindo requisições concorrentes.
+- [x] Gravação atômica, FK de propriedade e bloqueio de exclusão de cartão com compras.
+- [x] Migration AddPurchasesAndInstallments e decisão de arquitetura 011.
+- [x] 122 testes backend passaram, nenhum ignorado, incluindo PostgreSQL real.
+
+Compra no dia do fechamento entra no ciclo seguinte. Dias inexistentes ajustam
+ao último dia do mês; vencimento é estritamente posterior ao fechamento.
+Faturas e limite disponível implementados na fase 16. Interface de compras permanece
+pendente; entrega cobre backend e regras financeiras desta fase.
+
 
 Agora:
 
@@ -1080,6 +1247,23 @@ Excelente parte para testes unitários.
 
 # Fase 16 — Invoices
 
+## Execução no repositório
+
+- [x] CreditCardInvoice persistida com cartão, proprietário, fechamento e vencimento.
+- [x] Parcelas vinculadas a faturas, agrupadas por cartão e datas de ciclo.
+- [x] Criação transacional e índice único para compras concorrentes/idempotentes.
+- [x] Listagem histórica e consulta de fatura com itens e totais decimais.
+- [x] Resumo de fatura atual, futuras, limite utilizado e disponível.
+- [x] Ciclo vazio projetado sem gravação; histórico preservado após editar cartão.
+- [x] Migration com backfill de parcelas existentes e FK obrigatória.
+- [x] Isolamento por usuário e documentação da política financeira.
+- [x] 130 testes backend passaram, nenhum ignorado, com PostgreSQL real.
+
+Entrega cobre backend. Limite disponível desconta todas as parcelas registradas;
+fechamento/vencimento não presumem pagamento. Quitação/pagamentos, bloqueio de
+compra por limite e interface de faturas ainda não implementados.
+
+
 Agora criamos:
 
 ```text
@@ -1118,6 +1302,24 @@ Esse módulo vai ser um dos maiores diferenciais do projeto.
 ---
 
 # Fase 17 — Recurring Transactions
+
+## Execução no repositório
+
+- [x] Recorrências mensais de receitas/despesas com conta e categoria opcional.
+- [x] Valor decimal, início, término inclusivo, checkpoint e desativação.
+- [x] Calendário preservando dia original após meses curtos e anos bissextos.
+- [x] Cadastro/listagem/consulta/desativação protegidos por usuário.
+- [x] Geração manual periódica até data inclusiva, sem lançamentos futuros.
+- [x] Recuperação limitada a 120 ocorrências por template/lote, com `hasMore`.
+- [x] Transação atômica, bloqueio por usuário e índice único por ocorrência.
+- [x] Base mínima Transaction e GET `/transactions` para lançamentos gerados.
+- [x] Migration, documentação e decisão de arquitetura 013.
+- [x] 147 testes backend passaram, nenhum ignorado, incluindo PostgreSQL real.
+
+Entrega cobre backend e processamento mensal inicial. Agendamento automático
+implementado na fase 22; transferências e saldo incremental
+continuam pendentes. Base gerada não conclui módulo completo da fase 6.
+
 
 Exemplo:
 
@@ -1160,6 +1362,25 @@ Recurring jobs
 ---
 
 # Fase 18 — Dashboard
+
+## Execução no repositório
+
+- [x] GET `/dashboard/summary` autenticado com agregações SQL por usuário.
+- [x] Saldo registrado, receitas/despesas do mês e categorias.
+- [x] Histórico de 12 meses com preenchimento de meses vazios.
+- [x] Faturas do mês e previsão de despesas dos próximos três meses.
+- [x] Recorrências e lançamentos futuros sem duplicar ocorrências registradas.
+- [x] Snapshot consistente, projeções e filtros de propriedade existentes.
+- [x] Dashboard Next.js com filtro de data, ECharts e alternativas acessíveis.
+- [x] Contrato Zod e estados de carregamento, vazio, erro e sessão expirada.
+- [x] Documentação e decisão de arquitetura 014.
+- [x] 149 testes backend passaram, nenhum ignorado, com PostgreSQL real.
+- [x] 7 testes frontend, lint, tipos, build Webpack e smoke HTTP web/API.
+
+Saldo não inclui saldo inicial; faturas permanecem separadas das despesas das
+contas. Pagamentos e CRUD manual ainda pendentes. Revisão visual depende de
+navegador disponível; validação frontend/HTTP registrada no README.
+
 
 Agora finalmente temos dados suficientes para um dashboard relevante.
 
@@ -1229,6 +1450,26 @@ Read model
 
 # Fase 19 — Integration Tests com Testcontainers
 
+## Execução no repositório
+
+- [x] Testcontainers.PostgreSql 4.16.0 com PostgreSQL 17 Alpine.
+- [x] Container por classe, porta aleatória e credenciais efêmeras.
+- [x] Startup com prontidão, migrations e upgrade com dados legados.
+- [x] Encerramento de API e remoção automática, inclusive em falha parcial.
+- [x] Fact/Theory sem dependência de FINTRACK_TEST_DATABASE e sem skips silenciosos.
+- [x] Cobertura dos módulos existentes: contas, autenticação, compras, faturas,
+  recorrências, transações geradas e dashboard.
+- [x] Teste de isolamento físico de duas fixtures e encerramento independente.
+- [x] Makefile e documentação de execução com/sem Docker.
+- [x] 150 testes backend passaram (48 integração), nenhum ignorado; containers
+  removidos automaticamente após execução.
+- [x] POST manual `/transactions`: implementado/testado na fase 20.
+- [x] Transfers: endpoints e cobertura PostgreSQL de concorrência/rollback adicionados na consolidação M3.
+
+Infraestrutura da fase implementada para funcionalidades existentes. Docker
+ativo é requisito de integração; falhas de ambiente/migration fazem suíte falhar.
+
+
 Agora você começa a usar containers também nos testes.
 
 Fluxo:
@@ -1279,6 +1520,24 @@ Deterministic tests
 
 # Fase 20 — E2E Testing
 
+## Execução no repositório
+
+- [x] Playwright Test com Chromium desktop e mobile.
+- [x] Runner com PostgreSQL descartável, migrations, API/web e portas aleatórias.
+- [x] Build `.next-e2e` separado do desenvolvimento e cleanup automático.
+- [x] Cadastro/login/logout, erro de credenciais e cookies HttpOnly.
+- [x] Criação de conta, lançamento manual de receita/despesa e dashboard real.
+- [x] Cartão, compra parcelada, calendário/centavos e faturas persistidas.
+- [x] Páginas protegidas, isolamento entre usuários e data inválida.
+- [x] Gráficos ECharts renderizados e ausência de overflow no fluxo principal.
+- [x] Trace/screenshot/vídeo em falhas e relatório HTML local.
+- [x] 6 E2E passaram, sem retries; 152 backend e 8 frontend passaram.
+
+Formulários essenciais foram incluídos para testar produto pelo navegador.
+Lançamentos manuais agora disponíveis, com migration preservando recorrentes.
+Transferências, edição/exclusão de lançamentos e pagamentos permanecem pendentes.
+
+
 Agora Playwright.
 
 Fluxos:
@@ -1308,6 +1567,24 @@ Aqui você testa o produto, não apenas código.
 ---
 
 # Fase 21 — Redis
+
+## Execução no repositório
+
+- [x] Redis 7 Alpine no Compose, healthcheck, loopback e memória limitada.
+- [x] Cache-aside do dashboard com chaves por usuário/data/revisão.
+- [x] TTL absoluto configurável, padrão 60 segundos.
+- [x] Hits evitam agregações; misses consultam PostgreSQL e preenchem Redis.
+- [x] Revisão SQL incrementada na mesma transação de escritas financeiras.
+- [x] Invalidação de todas as datas do usuário, protegida contra repopulação antiga.
+- [x] Fallback em outage, timeout e cache JSON inválido.
+- [x] Migration AddDashboardCacheRevisions e configuração local/Docker.
+- [x] Testcontainers Redis e E2E desktop/mobile com cache ativo.
+- [x] 161 testes backend passaram (55 integração), nenhum ignorado, e 6 E2E.
+
+Cache é opcional na API local direta; Compose/Makefile habilitam Redis. Hit ainda
+faz leitura indexada de revisão; PostgreSQL continua fonte de verdade. Cache
+não altera regras financeiras nem contrato/interface do dashboard.
+
 
 Agora existe motivo real para Redis.
 
@@ -1368,6 +1645,25 @@ Distributed Cache
 ---
 
 # Fase 22 — Background Jobs
+
+## Execução no repositório
+
+- [x] BackgroundService dentro da API para geração automática de recorrências.
+- [x] Ciclo inicial e intervalo configurável, sem sobreposição na mesma instância.
+- [x] Descoberta limitada de usuários pendentes e escrita isolada por proprietário.
+- [x] Escopo/DbContext novo por tentativa e retry exponencial de falhas transitórias.
+- [x] Lock/checkpoint compartilhados com endpoint manual e múltiplas instâncias.
+- [x] Retomada de backlog, cancelamento cooperativo e isolamento de falhas.
+- [x] Revisão transacional do cache atualizada sem depender de Redis.
+- [x] Configuração local/Compose; worker ausente no modo migrations.
+- [x] Documentação e decisão de arquitetura 018, sem migration adicional.
+- [x] 9 testes unitários e 16 integrações relacionados passaram; testes alterados
+  de concorrência/rollback revalidados isoladamente, nenhum ignorado.
+
+Jobs automáticos habilitados no Compose/Makefile, opcionais na API direta.
+Faturas já são geradas com compras; resumos permanecem projeções/cache. Não
+foram criados jobs redundantes de faturas vazias ou totais duplicados.
+
 
 Agora implemente jobs.
 
@@ -1467,6 +1763,23 @@ Idempotency
 
 ---
 
+## Entrega aplicada
+
+- [x] TransactionCreated v1 para transações manuais e recorrentes.
+- [x] Outbox PostgreSQL atômica com escrita financeira e revisão de cache.
+- [x] Producer RabbitMQ com mensagem persistente e publisher confirms.
+- [x] Exchange fanout e duas filas quorum duráveis independentes.
+- [x] Analytics Consumer e Notification Consumer com efeitos locais persistidos.
+- [x] Idempotência por evento, ack após commit, retries e DLQs quorum.
+- [x] Reconexão, cancelamento e processamento concorrente da outbox.
+- [x] RabbitMQ no Compose, configuração local e documentação operacional.
+- [x] Testes direcionados com PostgreSQL e RabbitMQ reais.
+
+Decisão: [019 — Transaction messaging](decisions/019-transaction-messaging.md).
+Notificações locais; email/push e replay automático não incluídos nesta fase.
+
+---
+
 # Fase 24 — Observabilidade local
 
 Antes da AWS, você pode começar com:
@@ -1507,265 +1820,220 @@ Distributed tracing
 
 ---
 
-# Fase 25 — CI
+## Entrega aplicada
 
-Agora GitHub Actions.
+- [x] Logs JSON estruturados com duração, status, rota e correlação.
+- [x] OpenTelemetry para HTTP, PostgreSQL, jobs, produtor e consumidores.
+- [x] Contexto W3C persistido na outbox e propagado pelo RabbitMQ.
+- [x] Métricas HTTP/runtime e counters de mensageria/recorrências.
+- [x] Collector, Jaeger e Prometheus locais no Compose.
+- [x] Redação de SQL, URLs, headers e tags de dados sensíveis antes de exportar traces.
+- [x] Configuração opcional, documentação e testes direcionados.
 
-Pull Request:
-
-```text
-Frontend
-
-├── lint
-├── typecheck
-└── tests
-
-
-Backend
-
-├── restore
-├── build
-└── tests
-```
-
-Depois:
-
-```text
-Integration Tests
-```
-
-com PostgreSQL container.
-
-## Pipeline
-
-```text
-Push
- ↓
-Build
- ↓
-Test
- ↓
-Validate
-```
-
-Nenhum deploy ainda.
+Decisão: [020 — Observabilidade local](decisions/020-local-observability.md).
+Logs no console, traces no Jaeger e métricas no Prometheus; sem AWS nesta fase.
 
 ---
 
-# Fase 26 — Docker Image Registry
+# Fase 25 — CI sem cobrança
 
-Agora pipelines começam a gerar imagens.
+Implementar GitHub Actions somente com runners padrão em repositório público.
+Executar lint, typecheck, testes pertinentes e builds de frontend/backend;
+integrações usam containers locais ao runner, sem serviços externos.
 
-```text
-GitHub Actions
-      │
-      ▼
-docker build
-      │
-      ▼
-Container Registry
-```
+- Nenhum runner maior, assinatura ou serviço cloud no pipeline.
+- Evitar uploads de artefatos; relatórios ficam nos logs do job. Cache é opcional
+  e deve permanecer dentro da franquia gratuita vigente.
+- Se o repositório for privado, o caminho garantido sem cobrança é executar as
+  mesmas verificações localmente via Makefile. CI remoto privado é opcional,
+  condicionado às franquias e bloqueio de uso pago da conta.
+- Não criar credenciais AWS nem jobs de deploy remoto.
 
-Posteriormente:
+Entrega: verificações reproduzíveis e CI público gratuito, quando autorizado.
 
-```text
-Amazon ECR
-```
+## Entrega aplicada
 
----
+- [x] GitHub Actions com runners padrão, somente em repositório público.
+- [x] Lint, typecheck, testes frontend e builds Next.js/.NET.
+- [x] Testes unitários, arquitetura, integrações Testcontainers e E2E desktop/mobile.
+- [x] Makefile com verificações locais equivalentes e instalação explícita.
+- [x] Sem cache remoto, upload de artefatos, AWS, segredos ou deploy.
+- [x] Token somente leitura, actions fixadas por SHA, timeout e cancelamento.
 
-# Fase 27 — AWS Foundation
+Decisão: [021 — CI público sem cobrança](decisions/021-free-public-ci.md).
+Workflow preparado localmente; execução remota depende de publicação pelo proprietário.
 
-Agora cloud.
-
-Comece simples.
-
-Backend:
-
-```text
-ECS Fargate
-```
-
-Banco:
-
-```text
-RDS PostgreSQL
-```
-
-Arquivos:
-
-```text
-S3
-```
-
-Logs:
-
-```text
-CloudWatch
-```
-
-Frontend pode inicialmente continuar separado ou ir para:
-
-```text
-Amplify
-
-ou
-
-Container
-```
-
-dependendo da decisão final.
 
 ---
 
-# Fase 28 — Arquitetura AWS completa
+# Fase 26 — Imagens Docker e registry opcional
 
-A arquitetura pode evoluir para:
-
-```text
-Internet
-   │
-   ▼
-CloudFront
-   │
-   ▼
-Frontend
-   │
-   ▼
-Application Load Balancer
-   │
-   ▼
-ECS Fargate
-   │
-   ├── RDS PostgreSQL
-   │
-   ├── ElastiCache Redis
-   │
-   └── SQS
-```
-
-Monitoramento:
+Construir imagens de API e frontend localmente. Isso basta para concluir fase.
+Opcionalmente publicar imagens **públicas** no GitHub Container Registry (GHCR),
+cujo uso público é gratuito nas condições atuais, após decisão do proprietário.
 
 ```text
-CloudWatch
+Build local ou GitHub Actions gratuito
+      ↓
+Imagens versionadas
+      ↓
+GHCR público (opcional)
+      ↓
+Docker Compose local
 ```
 
-Tracing:
+Não utilizar Amazon ECR. Não incluir segredos ou dados pessoais nas imagens.
+Documentar tags, build e execução; se registry deixar de ser gratuito, usar
+somente build local.
 
-```text
-OpenTelemetry
-```
+## Entrega aplicada
+
+- [x] Imagens API/frontend construídas localmente com tag `phase26`.
+- [x] Makefile para build e execução sem pull/build implícitos.
+- [x] Compose usa mesma tag para API, migrations e frontend.
+- [x] Contextos excluem segredos, logs e artefatos E2E.
+- [x] Documentação de tags, execução e transporte local com save/load.
+
+GHCR excluído por decisão do proprietário; nenhuma publicação em registry.
+Decisão: [022 — Imagens Docker locais](decisions/022-local-container-images.md).
+
 
 ---
 
-# Fase 29 — SQS
+# Fase 27 — Entrega funcional local
 
-Aqui você pode substituir ou complementar RabbitMQ:
+Consolidar execução completa via Docker Compose: frontend, API, PostgreSQL,
+Redis, RabbitMQ e observabilidade já existentes. Documentar configuração,
+migrations, inicialização, encerramento e persistência.
 
-```text
-RabbitMQ local
-```
+Entrega: outra pessoa consegue executar o projeto localmente seguindo README.
+Não provisionar Fargate, RDS, S3, Amplify ou CloudWatch. Armazenamento de arquivos,
+caso necessário, usa volume local; nenhuma funcionalidade depende de AWS.
 
-por:
+## Entrega aplicada
 
-```text
-SQS AWS
-```
+- [x] README inicia com fluxo único de setup e execução Compose completa.
+- [x] Setup cria `.env` com segredos aleatórios sem sobrescrever arquivo existente.
+- [x] Configuração, migrations, logs, endereços e diagnóstico documentados.
+- [x] Persistência, dados voláteis e encerramento sem excluir volumes documentados.
+- [x] Portas restritas ao loopback e projetos Compose isoláveis.
+- [x] Sem AWS, GHCR ou dependência de serviços pagos.
 
-E entender diferenças.
+Decisão: [023 — Entrega funcional local](decisions/023-local-functional-delivery.md).
 
-Muito importante para entrevistas:
-
-```text
-Queue vs Pub/Sub
-
-Managed broker
-
-Visibility timeout
-
-Dead Letter Queue
-
-Retry
-```
 
 ---
 
-# Fase 30 — Terraform
+# Fase 28 — Arquitetura cloud como estudo de portfólio
 
-Agora finalmente IaC.
+Produzir diagrama e ADR conceituais mapeando stack local para alternativas AWS:
+ECS Fargate, RDS, ElastiCache, SQS, S3, CloudFront, ALB e CloudWatch.
 
-Terraform cria:
+Comparar disponibilidade, segurança, escalabilidade e custos. Explicar por que
+serviços gerenciados foram excluídos da execução pessoal sem cobrança.
 
-```text
-VPC
+Entrega exclusivamente documental, sem criar conta, recursos ou credenciais AWS.
+Identificar claramente arquitetura como proposta, não como deploy realizado.
 
-ECS
+## Entrega aplicada
 
-RDS
+- [x] Diagrama Mermaid com todos os serviços AWS previstos.
+- [x] Mapeamento da stack real e limites de SSR, transporte e workers.
+- [x] Comparação de disponibilidade, segurança, escalabilidade e custos.
+- [x] Referências oficiais e justificativa para manter execução pessoal local.
+- [x] ADR conceitual; sem recursos, credenciais, deploy AWS ou GHCR.
 
-SQS
+Estudo: [Arquitetura AWS conceitual](architecture/aws-conceptual.md).
+Diagrama: [Proposta AWS](diagrams/aws-conceptual.md).
+Decisão: [024 — Arquitetura AWS conceitual](decisions/024-cloud-conceptual-architecture.md).
 
-Redis
-
-Security Groups
-
-IAM
-
-CloudWatch
-```
-
-Estrutura:
-
-```text
-infrastructure/
-
-├── docker/
-│
-└── terraform/
-    ├── modules/
-    ├── environments/
-    │   ├── dev/
-    │   └── prod/
-    └── main.tf
-```
-
-## Estudar
-
-```text
-Infrastructure as Code
-
-State
-
-Provider
-
-Resource
-
-Module
-
-Plan
-
-Apply
-```
 
 ---
 
-# Fase 31 — CD
+# Fase 29 — Mensageria local e comparação com SQS
 
-Agora:
+Manter RabbitMQ local como implementação real. Demonstrar outbox, confirmações,
+retries, deduplicação e DLQ com testes e exemplos existentes.
+
+Estudar diferenças com SQS em documentação: queue vs pub/sub, visibility timeout,
+long polling, entrega e dead letters. Não criar filas AWS nem trocar integração
+funcional por dependência de serviço pago.
+
+## Entrega aplicada
+
+- [x] RabbitMQ preservado como implementação real.
+- [x] Demonstração de outbox, confirms, retries, deduplicação e DLQs com testes existentes.
+- [x] Alvo `make test-messaging` e diagnóstico SQL somente leitura.
+- [x] Comparação queue/pub-sub, visibility timeout, long polling, entrega e dead letters.
+- [x] SQS/SNS exclusivamente documentais; sem filas ou credenciais AWS.
+
+Estudo: [RabbitMQ e SQS](architecture/rabbitmq-and-sqs.md).
+Decisão: [025 — Mensageria local e estudo de SQS](decisions/025-local-messaging-sqs-comparison.md).
+
+
+---
+
+# Fase 30 — Infrastructure as Code local
+
+Docker Compose continua definição executável do ambiente. Para praticar Terraform,
+criar exercício opcional isolado com provider Docker e containers descartáveis
+locais; não gerenciar os mesmos recursos simultaneamente com Compose.
+
+Estudar providers, resources, modules, state, plan, apply e destroy. Estado local
+não entra no Git. Não usar backend remoto pago, Terraform cloud pago ou provider
+AWS no caminho executável.
+
+Entrega: exemplo local reproduzível, sem credenciais cloud. Arquitetura AWS da
+fase 28 permanece documental; nenhum `apply` provisiona serviços externos.
+
+## Entrega aplicada
+
+- [x] Laboratório Terraform opcional com provider Docker e módulo HTTP local.
+- [x] Rede/container descartáveis separados dos objetos Compose.
+- [x] Backend local; state, backups e planos excluídos do Git.
+- [x] Versão/checksums do provider no lockfile e alvos Make para ciclo completo.
+- [x] Providers, resources, modules, state, plan, apply e destroy documentados.
+- [x] Sem AWS, backend remoto pago, Terraform cloud ou credenciais externas.
+
+Exercício: [Terraform Docker local](../ops/terraform/local/README.md).
+Decisão: [026 — Exercício Terraform local](decisions/026-local-terraform-lab.md).
+
+
+---
+
+# Fase 31 — Release e entrega local
 
 ```text
-Merge main
+Tag de versão
    ↓
-Tests
+Verificações gratuitas
    ↓
-Build Docker Image
+Build de imagens
    ↓
-Push ECR
+Transporte local save/load (opcional)
    ↓
-Deploy ECS
+Atualização manual do ambiente local
 ```
 
-Pipeline completo.
+Documentar release, atualização, migrations, backup local e retorno à versão
+anterior quando compatível. Não conectar runner hospedado ao computador pessoal
+para deploy automático. Não fazer push ECR ou deploy ECS.
+
+Entrega de portfólio: release versionada, screenshots, vídeo demonstrativo e
+instruções para executar stack. Hospedagem pública contínua não é requisito.
+
+## Entrega aplicada
+
+- [x] Release local v0.1.0, imagens versionadas e tag Git local.
+- [x] Procedimento de atualização, migrations e retorno compatível.
+- [x] Backup privado sem sobrescrita e restore validado em banco vazio.
+- [x] Screenshots e vídeo demonstrativo com dados fictícios.
+- [x] Build e validação direcionada em stack Compose descartável.
+- [x] Sem GHCR, ECR, ECS ou deploy automático.
+
+Release: [v0.1.0](releases/v0.1.0.md).
+Procedimento: [Release local](releases/local-release.md).
+Decisão: [027 — Release local](decisions/027-local-release.md).
 
 ---
 
@@ -1790,7 +2058,7 @@ Exemplos:
 
 007-rabbitmq.md
 
-008-aws-ecs.md
+008-cloud-conceptual.md
 ```
 
 Formato:
@@ -1806,6 +2074,18 @@ Consequences
 ```
 
 Isso deve acontecer continuamente, não só no final.
+
+## Entrega aplicada
+
+- [x] Catálogo dos ADRs com escopo real, documental e opcional explícito.
+- [x] Fundamentos atuais registrados retrospectivamente nos ADRs 001–004.
+- [x] Contexto, decisão, alternativas e consequências em todos os ADRs.
+- [x] Template e processo de evolução/substituição preservando histórico.
+- [x] IDs, cobertura do índice e links locais validados.
+
+Catálogo: [Architecture Decision Records](decisions/README.md).
+Modelo: [Template de ADR](decisions/template.md).
+Fase exclusivamente documental; sem alterações de runtime ou nova implantação.
 
 ---
 
@@ -1834,11 +2114,11 @@ API documentation
 
 System design decisions
 
-Cloud architecture
+Cloud architecture (conceptual, not deployed)
 
 Screenshots
 
-Demo
+Demo (screenshots, recorded video and local setup)
 
 Roadmap
 ```
@@ -1854,6 +2134,21 @@ para:
 ```text
 "case técnico de engenharia"
 ```
+
+## Entrega aplicada
+
+- [x] README organizado como apresentação e guia atual de execução.
+- [x] Visão geral, funcionalidades reais, limites, stack e diagrama local Mermaid.
+- [x] Setup Docker/local, variáveis, testes pertinentes e diagnóstico.
+- [x] Guia da API conferido contra rotas e contratos existentes.
+- [x] ADRs, cloud conceitual, screenshots, vídeo, release e roadmap vinculados.
+- [x] Histórico anterior preservado separadamente com contexto explícito.
+- [x] Links locais, âncoras e coerência documental validados.
+
+Entrega: [README principal](../README.md).
+API: [Referência local](api/README.md).
+Histórico: [Implementação até fase 32](implementation-history.md).
+Validação documental; nenhuma nova execução de suíte, build ou deploy nesta fase.
 
 ---
 
@@ -1912,15 +2207,17 @@ RabbitMQ
       ↓
 Observability
       ↓
-CI
+CI gratuito / verificações locais
       ↓
-AWS
+Release local
       ↓
-SQS
+Cloud conceitual
       ↓
-Terraform
+RabbitMQ / estudo de SQS
       ↓
-CD
+IaC local
+      ↓
+Entrega local versionada
       ↓
 Portfolio Release
 ```
@@ -1929,25 +2226,30 @@ Portfolio Release
 
 # Como eu dividiria em milestones
 
-| Milestone | Objetivo |
-|---|---|
-| M0 | Planning |
-| M1 | Docker Foundation |
-| M2 | Core Backend |
-| M3 | Transactions |
-| M4 | Frontend |
-| M5 | Authentication |
-| M6 | Credit Cards |
-| M7 | Financial Engine |
-| M8 | Dashboard |
-| M9 | Testing |
-| M10 | Redis & Background Jobs |
-| M11 | Messaging |
-| M12 | Observability |
-| M13 | CI/CD |
-| M14 | AWS |
-| M15 | Infrastructure as Code |
-| M16 | Portfolio Release |
+Situação consolidada em 21/10/2026: [auditoria inicial](project-audit-2026-10-21.md)
+e [correções M0/M3/M4 e precisão](milestone-completion-2026-10-21.md).
+“Entregue no escopo” não significa produto completo ou nova execução de todas
+as validações. Observações nas fases anteriores preservam contexto histórico.
+
+| Milestone | Objetivo | Situação consolidada |
+|---|---|---|
+| M0 | Planning | Entregue: visão, requisitos, regras e casos de uso |
+| M1 | Docker Foundation | Entregue no escopo local |
+| M2 | Core Backend | Entregue no escopo de camadas, persistência e contas |
+| M3 | Transactions | Entregue: receitas/despesas, transferências atômicas e saldo por conta |
+| M4 | Frontend | Entregue no escopo da fase 10, incluindo edição/exclusão de contas |
+| M5 | Authentication | Entregue no escopo da fase 13 |
+| M6 | Credit Cards | Backend entregue; gestão web parcial |
+| M7 | Financial Engine | Backend entregue; pagamentos e gestão web de recorrências pendentes |
+| M8 | Dashboard | Entregue com limites financeiros documentados |
+| M9 | Testing | Infraestrutura entregue; transferências agora cobertas; suíte completa não repetida |
+| M10 | Redis & Background Jobs | Entregue no escopo local |
+| M11 | Messaging | Entregue no escopo local |
+| M12 | Observability | Entregue no escopo local |
+| M13 | CI gratuito e releases locais | Entrega local disponível; execução de CI remoto não comprovada; sem GHCR |
+| M14 | Arquitetura cloud conceitual | Entregue documentalmente; sem deploy |
+| M15 | Infrastructure as Code local | Laboratório opcional entregue; não reexecutado nesta auditoria |
+| M16 | Portfolio Release | Apresentação/release entregues; produto ainda tem pendências |
 
 ---
 
