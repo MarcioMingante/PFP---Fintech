@@ -2104,6 +2104,21 @@ para:
 "case técnico de engenharia"
 ```
 
+## Entrega aplicada
+
+- [x] README organizado como apresentação e guia atual de execução.
+- [x] Visão geral, funcionalidades reais, limites, stack e diagrama local Mermaid.
+- [x] Setup Docker/local, variáveis, testes pertinentes e diagnóstico.
+- [x] Guia da API conferido contra rotas e contratos existentes.
+- [x] ADRs, cloud conceitual, screenshots, vídeo, release e roadmap vinculados.
+- [x] Histórico anterior preservado separadamente com contexto explícito.
+- [x] Links locais, âncoras e coerência documental validados.
+
+Entrega: [README principal](../README.md).
+API: [Referência local](api/README.md).
+Histórico: [Implementação até fase 32](implementation-history.md).
+Validação documental; nenhuma nova execução de suíte, build ou deploy nesta fase.
+
 ---
 
 # Fluxo completo de evolução
