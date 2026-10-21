@@ -70,6 +70,16 @@ e [GitHub Packages/GHCR](https://docs.github.com/en/billing/concepts/product-bil
 
 # Fase 0 — Produto e planejamento
 
+## Execução no repositório — consolidação M0
+
+- [x] Visão do produto, escopo e restrições.
+- [x] Requisitos com critérios de aceitação e evidências.
+- [x] Regras de propriedade, dinheiro, saldo, transferências e calendário.
+- [x] Casos de uso com alternativas e limites explícitos.
+
+Documentos: [visão](product/vision.md), [requisitos](product/requirements.md),
+[regras](product/business-rules.md) e [casos de uso](product/use-cases.md).
+
 Antes de escrever código, defina o que o sistema realmente precisa resolver.
 
 ## Criar documentação inicial
@@ -550,6 +560,17 @@ DTO != Domain Entity
 
 # Fase 6 — Categories e Transactions
 
+## Execução no repositório — consolidação M3
+
+- [x] Categorias e receitas/despesas manuais/recorrentes existentes.
+- [x] Transferências entre contas próprias diferentes em registro atômico.
+- [x] Idempotência por usuário/chave com proteção de concorrência e propriedade.
+- [x] Saldo por conta derivado do histórico; transferência não infla renda/despesa.
+- [x] API/web e testes de domínio, concorrência, rollback e integração.
+
+Transferências usam `/transfers`; saldos, `/accounts/balances`. Saldo negativo
+é permitido; sem campo de saldo inicial. [ADR 028](decisions/028-transfers-and-balances.md).
+
 Depois:
 
 ```text
@@ -625,10 +646,10 @@ Tudo ou nada
 - [x] Integração API/PostgreSQL real com banco isolado e migrations.
 - [x] Cobertura HTTP de persistência, validação, 404 e exclusão de conta.
 - [x] Instruções de execução e política de testes para novas features no README.
-- [ ] TransactionTests e TransferTests: dependem da implementação ainda ausente da fase 6.
+- [x] Testes de transações manuais e transferências: domínio e integrações acrescentados nas entregas correspondentes.
 
-Base de testes implementada para módulos existentes. Fase 7 permanece com
-pendência de transações/transferências; Testcontainers reservado para fase 19.
+Base de testes ampliada para transações/transferências na consolidação M3.
+Testcontainers foi introduzido na fase 19.
 
 Os testes não ficam mais apenas no final.
 
@@ -866,6 +887,16 @@ Error State
 ---
 
 # Fase 10 — Frontend + backend integration
+
+## Execução no repositório — consolidação M4
+
+- [x] Listar, criar, editar e excluir contas no navegador.
+- [x] Confirmação/cancelamento, validação e mensagem para conta em uso.
+- [x] Listar/criar receitas e despesas, transferir e visualizar saldos.
+- [x] Persistência, erros e precisão validados em E2E desktop/mobile.
+
+Entrega atende fluxos enumerados nesta fase. Gestão web de outras entidades e
+edição/exclusão de lançamentos continuam evoluções separadas.
 
 Agora implementamos:
 
@@ -1433,7 +1464,7 @@ Read model
 - [x] 150 testes backend passaram (48 integração), nenhum ignorado; containers
   removidos automaticamente após execução.
 - [x] POST manual `/transactions`: implementado/testado na fase 20.
-- [ ] Transfers: dependem de endpoints ainda ausentes da fase 6.
+- [x] Transfers: endpoints e cobertura PostgreSQL de concorrência/rollback adicionados na consolidação M3.
 
 Infraestrutura da fase implementada para funcionalidades existentes. Docker
 ativo é requisito de integração; falhas de ambiente/migration fazem suíte falhar.
@@ -2195,25 +2226,30 @@ Portfolio Release
 
 # Como eu dividiria em milestones
 
-| Milestone | Objetivo |
-|---|---|
-| M0 | Planning |
-| M1 | Docker Foundation |
-| M2 | Core Backend |
-| M3 | Transactions |
-| M4 | Frontend |
-| M5 | Authentication |
-| M6 | Credit Cards |
-| M7 | Financial Engine |
-| M8 | Dashboard |
-| M9 | Testing |
-| M10 | Redis & Background Jobs |
-| M11 | Messaging |
-| M12 | Observability |
-| M13 | CI gratuito e releases locais |
-| M14 | Arquitetura cloud conceitual |
-| M15 | Infrastructure as Code local |
-| M16 | Portfolio Release |
+Situação consolidada em 21/10/2026: [auditoria inicial](project-audit-2026-10-21.md)
+e [correções M0/M3/M4 e precisão](milestone-completion-2026-10-21.md).
+“Entregue no escopo” não significa produto completo ou nova execução de todas
+as validações. Observações nas fases anteriores preservam contexto histórico.
+
+| Milestone | Objetivo | Situação consolidada |
+|---|---|---|
+| M0 | Planning | Entregue: visão, requisitos, regras e casos de uso |
+| M1 | Docker Foundation | Entregue no escopo local |
+| M2 | Core Backend | Entregue no escopo de camadas, persistência e contas |
+| M3 | Transactions | Entregue: receitas/despesas, transferências atômicas e saldo por conta |
+| M4 | Frontend | Entregue no escopo da fase 10, incluindo edição/exclusão de contas |
+| M5 | Authentication | Entregue no escopo da fase 13 |
+| M6 | Credit Cards | Backend entregue; gestão web parcial |
+| M7 | Financial Engine | Backend entregue; pagamentos e gestão web de recorrências pendentes |
+| M8 | Dashboard | Entregue com limites financeiros documentados |
+| M9 | Testing | Infraestrutura entregue; transferências agora cobertas; suíte completa não repetida |
+| M10 | Redis & Background Jobs | Entregue no escopo local |
+| M11 | Messaging | Entregue no escopo local |
+| M12 | Observability | Entregue no escopo local |
+| M13 | CI gratuito e releases locais | Entrega local disponível; execução de CI remoto não comprovada; sem GHCR |
+| M14 | Arquitetura cloud conceitual | Entregue documentalmente; sem deploy |
+| M15 | Infrastructure as Code local | Laboratório opcional entregue; não reexecutado nesta auditoria |
+| M16 | Portfolio Release | Apresentação/release entregues; produto ainda tem pendências |
 
 ---
 

@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-const money = z.number().finite();
-const nonnegative = money.nonnegative();
+import { moneySchema as money, nonnegativeMoneySchema as nonnegative } from "./money.ts";
 export const dashboardDateSchema = z.iso.date().refine(value => value >= "0002-01-01" && value <= "9998-12-01");
 export const dashboardSummarySchema = z.object({
   asOf: dashboardDateSchema,

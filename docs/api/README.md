@@ -2,8 +2,10 @@
 
 Base local padrão: `http://localhost:5168`. Rotas conferidas no
 [Program.cs](../../apps/api/src/FinTrack.Api/Program.cs). Exemplos usam JSON com
-propriedades camelCase, GUIDs para IDs e datas `YYYY-MM-DD`. Valores monetários
-são números decimais positivos; tipo define receita ou despesa.
+propriedades camelCase, GUIDs para IDs e datas `YYYY-MM-DD`. Dinheiro é emitido como string decimal com ponto e duas casas.
+Requests devem
+preferir strings (números legados ainda são aceitos); tipo define receita/despesa.
+Saldo pode ser negativo; valores de lançamentos individuais devem ser positivos.
 
 Não há Swagger UI ou documento OpenAPI HTTP mapeado atualmente. Referência abaixo
 cobre rotas existentes; contratos e validadores do código definem limites completos.
@@ -50,6 +52,8 @@ quando omitida, serviços usam data atual UTC.
 
 | Método | Rota | Operação |
 | --- | --- | --- |
+| GET | `/accounts/balances` | Saldos registrados por conta até hoje UTC |
+| GET, POST | `/transfers` | Listar/criar transferências internas idempotentes |
 | GET, POST | `/accounts` | Listar/criar contas |
 | GET, PUT, DELETE | `/accounts/{id}` | Consultar/atualizar/excluir conta |
 | GET, POST | `/categories` | Listar/criar categorias |
@@ -68,7 +72,7 @@ quando omitida, serviços usam data atual UTC.
 | GET | `/dashboard/summary?asOf=2024-03-31` | Agregações e projeções do usuário |
 
 Contas/categorias usam `{"name":"Nome fictício"}` no POST/PUT.
-Cartões usam `{"name":"Cartão fictício","limit":8000,"closingDay":25,"dueDay":5}`.
+Cartões usam `{"name":"Cartão fictício","limit":"8000.00","closingDay":25,"dueDay":5}`.
 PUT recebe campos completos previstos pelo contrato, não é atualização parcial.
 
 ### Lançamento manual
@@ -80,7 +84,7 @@ POST `/transactions`:
   "accountId": "11111111-1111-4111-8111-111111111111",
   "categoryId": null,
   "description": "Salário fictício",
-  "amount": 5000.00,
+  "amount": "5000.00",
   "type": "Income",
   "occurredOn": "2024-03-05"
 }
@@ -97,7 +101,7 @@ POST `/credit-cards/{id}/purchases`:
 ```json
 {
   "description": "Notebook fictício",
-  "amount": 1200.00,
+  "amount": "1200.00",
   "installmentCount": 4,
   "purchaseDate": "2024-01-25",
   "idempotencyKey": "22222222-2222-4222-8222-222222222222"
@@ -118,7 +122,7 @@ POST `/recurring-transactions`:
   "accountId": "11111111-1111-4111-8111-111111111111",
   "categoryId": null,
   "description": "Aluguel fictício",
-  "amount": 1500.00,
+  "amount": "1500.00",
   "type": "Expense",
   "startDate": "2024-01-31",
   "endDate": null
@@ -130,6 +134,32 @@ ou `{}` para data atual. Resposta inclui `throughDate`, `generatedCount` e
 `hasMore`; backlog pode exigir novos ciclos. Job e endpoint compartilham controle
 idempotente/concorrente. Desativação impede novas gerações, preservando histórico.
 
+## Transferências e saldos
+
+POST `/transfers` recebe:
+
+```json
+{
+  "sourceAccountId": "11111111-1111-4111-8111-111111111111",
+  "destinationAccountId": "33333333-3333-4333-8333-333333333333",
+  "description": "Reserva fictícia",
+  "amount": "10.01",
+  "occurredOn": "2024-03-05",
+  "idempotencyKey": "44444444-4444-4444-8444-444444444444"
+}
+```
+
+Substitua IDs por duas contas diferentes próprias. Criação retorna 201; replay
+idêntico, 200; mesma chave com conteúdo diferente, 409. Chave é isolada por usuário.
+Conta alheia/ausente retorna 404; mesma conta, data futura ou valor inválido, 400.
+Saldo negativo é permitido. Ambas as incidências persistem num registro atômico.
+
+GET `/transfers` lista registros do usuário. GET `/accounts/balances` retorna
+`[{"id":"GUID","name":"Conta","balance":"90.01"}]`. Saldo inclui receitas,
+despesas e transferências até hoje UTC, sem modificar histórico. Transferências
+não são Income/Expense, não aparecem em `/transactions` nem alteram renda/despesa
+do dashboard. Excluir qualquer conta referenciada retorna 409.
+
 ## Respostas e limites
 
 Leituras/atualizações normalmente retornam 200; criações, 201; exclusões bem-sucedidas,
@@ -138,7 +168,7 @@ sem sessão válida retorna 401; recurso ausente ou inacessível, 404.
 Excluir conta em uso ou cartão com compras retorna 409. Nem toda rota emite todos
 esses status. Falhas inesperadas não têm contrato uniforme de erro documentado.
 
-Não existem endpoints de transferências, pagamento de faturas, exclusão de
+Não existem endpoints de pagamento de faturas, exclusão de
 categorias ou edição/exclusão de lançamentos. Consultas de dashboard usam
 PostgreSQL/cache; consumidores de mensageria não alteram seu contrato.
 Consulte [ADRs](../decisions/README.md) para regras, isolamento e limites operacionais.

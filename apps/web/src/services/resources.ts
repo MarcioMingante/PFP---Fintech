@@ -7,7 +7,7 @@ import type { ResourceKind } from "@/types/resource";
 export async function listResources(kind: ResourceKind) {
   const token = await getAccessToken();
   if (!token) redirect("/login");
-  const response = await fetch(new URL(`/${kind}`, getApiUrl()), {
+  const response = await fetch(new URL(kind === "accounts" ? "/accounts/balances" : "/categories", getApiUrl()), {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
     signal: AbortSignal.timeout(5000),

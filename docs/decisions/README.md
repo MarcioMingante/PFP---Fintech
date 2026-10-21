@@ -36,6 +36,8 @@ um estudo, não implantação AWS. ADR 026 define exercício opcional separado d
 | 025 | [Mensageria local e estudo de SQS](025-local-messaging-sqs-comparison.md) | RabbitMQ real; comparação SQS/SNS documental |
 | 026 | [Exercício Terraform Docker local](026-local-terraform-lab.md) | Laboratório local opcional |
 | 027 | [Release versionada local](027-local-release.md) | Implementação/fluxo local |
+| 028 | [Transferências atômicas e saldos derivados](028-transfers-and-balances.md) | Implementação local |
+| 029 | [Dinheiro exato na API e frontend](029-exact-money-json.md) | Implementação local |
 
 Os números 005–008 não têm registros neste diretório. Nomes apresentados como
 exemplos no roadmap não constituem ADRs existentes: JWT está no 009, Redis no
@@ -45,7 +47,7 @@ renumerar links históricos apenas para preencher lacunas.
 ## Registrar e revisar decisões
 
 1. Copiar [template](template.md), usando próximo número livre após maior ADR
-   existente e nome curto em kebab-case. Na conclusão desta fase, próximo é 028.
+   existente e nome curto em kebab-case. Após entrega M0/M3/M4, próximo é 030.
 2. Preencher contexto, decisão, alternativas e consequências; incluir situação,
    escopo e evidências que permitam revisão. Documentos em português usam esses
    títulos como equivalentes a Context, Decision, Alternatives e Consequences.

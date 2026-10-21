@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAccessToken } from "@/services/session";
 import { getApiUrl } from "@/config/api";
-import { cardListSchema, invoiceListSchema, transactionListSchema } from "@/schemas/finance-forms";
+import { cardListSchema, invoiceListSchema, transactionListSchema, transferListSchema } from "@/schemas/finance-forms";
 async function read<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   const token = await getAccessToken();
   if (!token) redirect("/login");
@@ -14,3 +14,5 @@ async function read<T>(path: string, schema: z.ZodType<T>): Promise<T> {
 export const listTransactions = () => read("/transactions", transactionListSchema);
 export const listCreditCards = () => read("/credit-cards", cardListSchema);
 export const listInvoices = (cardId: string) => read(`/credit-cards/${cardId}/invoices`, invoiceListSchema);
+
+export const listTransfers = () => read("/transfers", transferListSchema);

@@ -4,6 +4,13 @@ import { useEffect, useRef } from "react";
 import type { DashboardSummary } from "@/schemas/dashboard";
 import { formatMonth, formatMoney } from "@/utils/finance";
 
+function exactTooltip(params: unknown) {
+  return (Array.isArray(params) ? params : [params]).map(item => {
+    const point = item as { seriesName: string; data: { exactAmount: string } };
+    return `${point.seriesName}: ${formatMoney(point.data.exactAmount)}`;
+  }).join("\n");
+}
+
 export function DashboardCharts({ data }: { data: DashboardSummary }) {
   const history = useRef<HTMLDivElement>(null);
   const categories = useRef<HTMLDivElement>(null);
@@ -20,20 +27,20 @@ export function DashboardCharts({ data }: { data: DashboardSummary }) {
       const categoryChart = echarts.init(categories.current, null, { renderer: "svg" });
       cashFlow.setOption({
         color: ["#176b49", "#c66a49"], animation: false,
-        tooltip: { trigger: "axis", renderMode: "richText", valueFormatter: (value: number) => formatMoney(value) },
+        tooltip: { trigger: "axis", renderMode: "richText", formatter: exactTooltip },
         legend: { bottom: 0 }, grid: { left: 70, right: 16, top: 24, bottom: 65 },
         xAxis: { type: "category", data: data.monthlyHistory.map(item => formatMonth(item.month)), axisLabel: { rotate: 35 } },
         yAxis: { type: "value", axisLabel: { formatter: (value: number) => new Intl.NumberFormat("pt-BR", { notation: "compact" }).format(value) } },
         series: [
-          { name: "Receitas", type: "bar", data: data.monthlyHistory.map(item => item.income), barMaxWidth: 20 },
-          { name: "Despesas", type: "bar", data: data.monthlyHistory.map(item => item.expenses), barMaxWidth: 20 },
+          { name: "Receitas", type: "bar", data: data.monthlyHistory.map(item => ({ value: Number(item.income), exactAmount: item.income })), barMaxWidth: 20 },
+          { name: "Despesas", type: "bar", data: data.monthlyHistory.map(item => ({ value: Number(item.expenses), exactAmount: item.expenses })), barMaxWidth: 20 },
         ],
       });
       categoryChart.setOption({
         color: ["#176b49", "#c66a49", "#82a68b", "#d7ad66", "#6c8fa1"], animation: false,
-        tooltip: { trigger: "item", renderMode: "richText", valueFormatter: (value: number) => formatMoney(value) },
+        tooltip: { trigger: "item", renderMode: "richText", formatter: exactTooltip },
         series: [{ name: "Despesas", type: "pie", radius: ["40%", "70%"], label: { show: false },
-          data: data.expensesByCategory.map(item => ({ name: item.name, value: item.total })) }],
+          data: data.expensesByCategory.map(item => ({ name: item.name, value: Number(item.total), exactAmount: item.total })) }],
       });
       const observer = new ResizeObserver(() => { cashFlow.resize(); categoryChart.resize(); });
       observer.observe(history.current); observer.observe(categories.current);

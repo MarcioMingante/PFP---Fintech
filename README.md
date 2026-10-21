@@ -31,9 +31,10 @@ requisitos estão no [procedimento de release](docs/releases/local-release.md#de
 | Área | Disponível |
 | --- | --- |
 | Autenticação | Cadastro/login/logout no frontend, JWT, refresh rotativo, cookies HttpOnly e isolamento por usuário |
-| Contas | CRUD na API; criação e listagem no frontend |
+| Contas | CRUD na API; criação/listagem/busca, edição e exclusão com confirmação no frontend |
 | Categorias | Criação, leitura e atualização na API; listagem no frontend |
 | Transações | Receitas/despesas manuais pela API e frontend, categoria opcional, listagem |
+| Transferências | Entre contas próprias, atômicas e idempotentes; saldos por conta na API/web |
 | Cartões | CRUD na API; criação/listagem, compra parcelada e consulta de faturas no frontend |
 | Parcelamento | 1–120 parcelas, distribuição exata dos centavos, calendário por fechamento/vencimento |
 | Faturas | Persistência, totais, calendário e limite disponível pela API |
@@ -42,7 +43,7 @@ requisitos estão no [procedimento de release](docs/releases/local-release.md#de
 | Mensageria | Outbox transacional, RabbitMQ, dois consumidores locais, deduplicação, retries e DLQ |
 | Operação | Compose, testes com containers, observabilidade local e backup/restauração documentados |
 
-Transferências, edição/exclusão de lançamentos, pagamentos de faturas e interface
+Edição/exclusão de lançamentos, pagamentos de faturas e interface
 para administrar recorrências permanecem pendentes. Notificações são registros
 locais; não enviam email/push. Recuperação de senha e MFA não estão implementados.
 Saldo registrado não representa integração com bancos nem conciliação bancária.
@@ -219,6 +220,24 @@ Para outras portas: `make dev-api API_PORT=5169 REDIS_PORT=6380` e
 Encerre processos locais antes de voltar a `make full`; ambos os modos usam
 mesmo banco/volume. Uma instância Next.js dev por checkout.
 
+## Planejamento e correções M0/M3/M4
+
+[Visão](docs/product/vision.md), [requisitos](docs/product/requirements.md),
+[regras](docs/product/business-rules.md) e [casos de uso](docs/product/use-cases.md)
+formalizam escopo e critérios de aceitação. [Entrega e validação](docs/milestone-completion-2026-10-21.md)
+registra correções dos milestones e regressões de centavos.
+
+Dinheiro trafega na API como string decimal exata, por exemplo `"100.01"`.
+Entradas, tabelas e tooltips não usam `Number` para cálculo/formatação financeira.
+Coordenadas de gráficos são aproximações visuais. Transferências não inflam
+receitas/despesas; saldo por conta é derivado e pode ser negativo.
+
+Migration `AddTransfers` precisa ser aplicada antes dos endpoints novos. Atualize
+API e frontend juntos: tipo JSON monetário de saída mudou de número para string.
+Faça backup antes de atualizar ambiente pessoal; `make full` recompila stack e
+executa migrador. Imagens da release `v0.1.0` não foram reconstruídas por esta
+correção; use uma tag nova para nova entrega versionada.
+
 ## Testes e CI
 
 Execute menor escopo pertinente à alteração. Integrações exigem Docker acessível
@@ -263,7 +282,7 @@ sem repetir testes da aplicação ou afirmar nova execução remota.
 respostas. Implementação usa Minimal APIs; não há Swagger UI/OpenAPI HTTP exposto
 atualmente. [Program.cs](apps/api/src/FinTrack.Api/Program.cs) define rotas atuais.
 
-[Catálogo de 23 ADRs](docs/decisions/README.md) explica camadas, persistência,
+[Catálogo de 25 ADRs](docs/decisions/README.md) explica camadas, persistência,
 autenticação, calendário financeiro, cache, jobs, outbox, observabilidade e entrega.
 [Comparação RabbitMQ/SQS](docs/architecture/rabbitmq-and-sqs.md) e
 [laboratório Terraform Docker](ops/terraform/local/README.md) complementam estudos.
@@ -281,7 +300,11 @@ SLA, failover ou desempenho em cloud; execução funcional permanece local.
 [Roadmap detalhado](docs/personal-finance-platform-roadmap.md) reúne fases e
 pendências. Fases 31–33 consolidam release, ADRs e apresentação do projeto;
 isso não encerra lacunas funcionais de fases anteriores. Próximos trabalhos
-incluem transferências, gestão completa de lançamentos e pagamentos de faturas.
+incluem gestão completa de lançamentos e pagamentos de faturas.
+
+[Auditoria inicial de milestones de 21/10/2026](docs/project-audit-2026-10-21.md)
+registra estado antes das correções; [entrega M0/M3/M4](docs/milestone-completion-2026-10-21.md)
+atualiza situação e evidências.
 
 [Histórico de implementação](docs/implementation-history.md) preserva registros
 anteriores com contexto de cada fase; [auditoria de 13/10/2026](docs/project-audit-2026-10-13.md)

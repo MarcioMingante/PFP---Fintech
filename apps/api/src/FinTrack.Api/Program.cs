@@ -1,3 +1,5 @@
+using FinTrack.Application.Transfers;
+using FinTrack.Api.Serialization;
 using FinTrack.Api.Observability;
 using System.Diagnostics;
 using FinTrack.Infrastructure.Messaging;
@@ -50,7 +52,9 @@ builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole(options => { options.IncludeScopes = true; options.UseUtcTimestamp = true; options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ"; });
 builder.Logging.Configure(options => options.ActivityTrackingOptions = ActivityTrackingOptions.TraceId | ActivityTrackingOptions.SpanId);
 
+builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new ExactDecimalConverter()));
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<TransferService>();
 var migrating = args.Contains("--migrate", StringComparer.Ordinal);
 if (!migrating)
 {
@@ -427,6 +431,23 @@ creditCards.MapGet("/{id:guid}/invoices/{invoiceId:guid}", async (Guid id, Guid 
     var invoice = (await service.ListAsync(id, cancellationToken))?.FirstOrDefault(item => item.Id == invoiceId);
     return invoice is null ? Results.NotFound() : Results.Ok(invoice);
 });
+
+var transfers = app.MapGroup("/transfers").RequireAuthorization();
+transfers.MapPost("", async (CreateTransferCommand request, TransferService service, CancellationToken cancellationToken) =>
+{
+    var errors = service.Validate(request);
+    if (errors.Count > 0) return Results.ValidationProblem(errors);
+    var result = await service.CreateAsync(request, cancellationToken);
+    return result.Status switch
+    {
+        TransferStatus.Created => Results.Created("/transfers", result.Transfer),
+        TransferStatus.Replayed => Results.Ok(result.Transfer),
+        TransferStatus.NotFound => Results.NotFound(),
+        _ => Results.Conflict(new { message = "Chave de idempotência já usada com outra transferência." })
+    };
+});
+transfers.MapGet("", async (ITransferRepository repository, CancellationToken cancellationToken) => Results.Ok(await repository.ListAsync(cancellationToken)));
+accounts.MapGet("/balances", async (ITransferRepository repository, CancellationToken cancellationToken) => Results.Ok(await repository.BalancesAsync(cancellationToken)));
 
 var recurring = app.MapGroup("/recurring-transactions").RequireAuthorization();
 recurring.MapPost("", async (CreateRecurringTransactionCommand request, RecurringTransactionService service, CancellationToken cancellationToken) =>

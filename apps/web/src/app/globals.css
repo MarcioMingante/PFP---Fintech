@@ -121,3 +121,10 @@ footer { padding: 16px 40px 28px; color: var(--muted); font-size: 11px; }
 .finance-form input, .finance-form select { width: 100%; }
 .finance-form select { padding: 11px 14px; background: #f8faf6; border: 1px solid var(--border); border-radius: 8px; color: var(--foreground); font: inherit; }
 .finance-form .button { margin-top: 12px; }
+
+.account-controls { display: flex; flex-wrap: wrap; gap: 12px; margin-left: auto; max-width: 100%; }
+.account-controls form { flex-basis: 100%; min-width: 0; }
+.account-controls input { max-width: 100%; }
+.resource-list li { flex-wrap: wrap; }
+
+.metric-card strong, .resource-list li > strong { overflow-wrap: anywhere; max-width: 100%; }

@@ -23,6 +23,8 @@ public sealed class FinTrackDbContext(
 
   public DbSet<DashboardCacheRevision> DashboardCacheRevisions => Set<DashboardCacheRevision>();
 
+  public DbSet<FinTrack.Domain.Transfers.Transfer> Transfers => Set<FinTrack.Domain.Transfers.Transfer>();
+
   public DbSet<Account> Accounts => Set<Account>();
 
   public DbSet<Category> Categories => Set<Category>();
@@ -35,6 +37,7 @@ public sealed class FinTrackDbContext(
     .Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
     .Select(entry => entry.Entity switch
     {
+      FinTrack.Domain.Transfers.Transfer transfer => transfer.UserId,
       Account account => account.UserId,
       Category category => category.UserId,
       FinTrack.Domain.CreditCards.CreditCard card => card.UserId,
@@ -94,6 +97,7 @@ public sealed class FinTrackDbContext(
     modelBuilder.Entity<FinTrack.Domain.Recurring.RecurringTransaction>().HasQueryFilter(item => CurrentUserId != null && item.UserId == CurrentUserId);
     modelBuilder.Entity<FinTrack.Domain.Transactions.Transaction>().HasQueryFilter(item => CurrentUserId != null && item.UserId == CurrentUserId);
     modelBuilder.Entity<DashboardCacheRevision>().HasQueryFilter(item => CurrentUserId != null && item.UserId == CurrentUserId);
+    modelBuilder.Entity<FinTrack.Domain.Transfers.Transfer>().HasQueryFilter(item => CurrentUserId != null && item.UserId == CurrentUserId);
     modelBuilder.Entity<Account>().HasQueryFilter(account => CurrentUserId != null && account.UserId == CurrentUserId);
     modelBuilder.Entity<Category>().HasQueryFilter(category => CurrentUserId != null && category.UserId == CurrentUserId);
     modelBuilder.ApplyConfigurationsFromAssembly(typeof(FinTrackDbContext).Assembly);

@@ -49,6 +49,7 @@ public static class DependencyInjection
     }
     else services.AddSingleton<IDashboardCache, DisabledDashboardCache>();
     services.AddScoped<FinTrack.Application.Transactions.ITransactionRepository, TransactionRepository>();
+    services.AddScoped<FinTrack.Application.Transfers.ITransferRepository, TransferRepository>();
     services.AddScoped<IAccountRepository, AccountRepository>();
     services.AddScoped<ICategoryRepository, CategoryRepository>();
 

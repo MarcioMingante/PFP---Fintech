@@ -1,5 +1,7 @@
 "use client";
 
+import { AccountControls } from "@/features/finance/account-controls";
+import { formatMoney } from "@/utils/finance";
 import { EmptyState } from "@/components/empty-state";
 import { useResourceSearch } from "@/hooks/use-resource-search";
 import type { Resource, ResourceKind } from "@/types/resource";
@@ -19,7 +21,7 @@ export function ResourceList({ resources, kind }: { resources: Resource[]; kind:
       <p className="sr-only" role="status">{filtered.length} resultados</p>
       {resources.length === 0 ? <EmptyState title={`Nenhuma ${kind === "accounts" ? "conta cadastrada" : "categoria cadastrada"}`} description={kind === "accounts" ? "Suas contas aparecerão aqui quando forem cadastradas." : "Organize receitas e despesas com categorias. Elas aparecerão aqui quando forem cadastradas."} />
         : filtered.length === 0 ? <EmptyState title="Nenhum resultado" description="Tente buscar por outro nome." />
-        : <ul className="resource-list">{filtered.map((resource) => <li key={resource.id}><span className="resource-icon" aria-hidden="true">{resource.name.charAt(0).toLocaleUpperCase("pt-BR")}</span><span>{resource.name}</span><span className="resource-tag">{kind === "accounts" ? "Conta" : "Categoria"}</span></li>)}</ul>}
+        : <ul className="resource-list">{filtered.map((resource) => <li key={resource.id}><span className="resource-icon" aria-hidden="true">{resource.name.charAt(0).toLocaleUpperCase("pt-BR")}</span><span>{resource.name}</span>{kind === "accounts" && resource.balance !== undefined && <strong>Saldo {formatMoney(resource.balance)}</strong>}<span className="resource-tag">{kind === "accounts" ? "Conta" : "Categoria"}</span>{kind === "accounts" && <AccountControls id={resource.id} name={resource.name} />}</li>)}</ul>}
     </section>
   );
 }
