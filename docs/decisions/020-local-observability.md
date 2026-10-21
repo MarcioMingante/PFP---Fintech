@@ -1,5 +1,11 @@
 # 020 — Observabilidade local
 
+## Contexto
+
+Requests, jobs e mensagens atravessam componentes diferentes; logs isolados não
+explicam causalidade. Fase 24 pede diagnóstico local sem exportar dados financeiros
+ou depender de plataforma gerenciada.
+
 ## Decisão
 
 API usa ILogger com console JSON, UTC, campos estruturados e scopes TraceId/SpanId.
@@ -40,6 +46,20 @@ explicitamente. Exportação assíncrona com timeout não participa da transaç�
 negócio. Collector offline pode perder telemetria; outbox financeira continua
 com garantias próprias. --migrate não inicia SDK/exporters. Não há tracing do
 browser/Next.js, alertas ou infraestrutura AWS nesta fase.
+
+## Alternativas
+
+Somente logs reduziria componentes, mas limitaria correlação entre produtor e
+consumidores. Plataforma gerenciada exigiria serviço externo. SDKs específicos
+por destino aumentariam acoplamento; OpenTelemetry com Collector mantém
+instrumentação separada dos destinos locais.
+
+## Consequências
+
+Collector, Jaeger e Prometheus ampliam consumo de recursos e operação local.
+Telemetria pode ser perdida sem afetar commit financeiro; traces em memória
+não são auditoria durável. Redação e baixa cardinalidade limitam exposição de
+dados, mas também reduzem detalhes disponíveis ao diagnóstico.
 
 ## Referências
 

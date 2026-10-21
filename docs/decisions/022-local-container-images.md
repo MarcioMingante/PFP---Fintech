@@ -1,5 +1,10 @@
 # 022 — Imagens Docker locais
 
+## Contexto
+
+Fase 26 precisa entregar executáveis versionados sem exigir publicação em
+registry. Aplicação já possui Dockerfiles e runtime via Compose.
+
 ## Decisão
 
 Fase 26 entrega imagens locais `fintrack-api:<tag>` e `fintrack-web:<tag>`.
@@ -25,6 +30,18 @@ Frontend também exclui `.next-e2e`, traces, vídeos e relatórios Playwright,
 que podem conter dados de sessões de teste. Dockerfiles não recebem segredos
 por ARG/ENV de build. JWT, senhas e conexões são fornecidos em runtime; não
 editar appsettings ou arquivos public para incluir dados reais.
+
+## Alternativas
+
+Publicar GHCR facilitaria distribuição, mas foi excluído pelo proprietário.
+ECR exigiria integração cloud fora do escopo. Build em cada máquina continua
+possível; save/load permite transportar snapshot local sem registry.
+
+## Consequências
+
+Operador preserva imagens e tags localmente e fornece dependências Docker
+separadamente. Tags podem ser substituídas; release do ADR 027 estabelece
+preservação das tags entregues. Não há endereço remoto para pull das imagens.
 
 ## Validação
 

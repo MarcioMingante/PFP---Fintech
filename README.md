@@ -188,6 +188,15 @@ make backup-local BACKUP=backups/pre-atualizacao.dump
 Backup não sobrescreve arquivos. Restore deve ser ensaiado em banco vazio isolado;
 trocar imagens não reverte migrations. Dependências Docker precisam estar locais.
 
+## Fase 32 — Decisões de arquitetura
+
+[Catálogo de ADRs](docs/decisions/README.md) reúne decisões, escopo e vínculos
+com implementação. Inclui fundamentos do backend, PostgreSQL, Compose e Next.js,
+além das decisões registradas durante fases anteriores.
+[Template](docs/decisions/template.md) orienta novos registros com contexto,
+decisão, alternativas, consequências e evidências. Arquitetura AWS permanece
+exclusivamente documental; GHCR continua excluído.
+
 ## Backend local
 
 Pré-requisitos: SDK .NET 10 e chave JWT configurada conforme fase 13. PostgreSQL em Docker é necessário para operações

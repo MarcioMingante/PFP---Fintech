@@ -19,6 +19,13 @@ apply do plano salvo e destroy com confirmação. Remove variáveis de contexto
 Docker do processo Terraform e host aceita somente socket Unix local.
 Não usar AWS, HCP Terraform, backend remoto, registry privado ou provisioners.
 
+## Alternativas
+
+Gerenciar stack existente também por Terraform criaria dois responsáveis pelos
+mesmos recursos. Provider AWS exigiria recursos e credenciais externos.
+Usar somente Compose seria suficiente para aplicação, mas não exercitaria
+state/plan/apply; laboratório isolado atende objetivo didático.
+
 ## Consequências
 
 Exercício demonstra ciclo de IaC sem mudar runtime da aplicação. Init/pull

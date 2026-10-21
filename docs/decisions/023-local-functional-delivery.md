@@ -1,5 +1,10 @@
 # 023 — Entrega funcional local
 
+## Contexto
+
+Fase 27 consolida serviços já implementados num caminho de instalação e execução
+que outra pessoa consiga seguir, mantendo dados e segredos locais.
+
 ## Decisão
 
 Docker Compose é entrada única do ambiente completo: frontend, API, migrations,
@@ -28,6 +33,18 @@ Cache Redis e traces Jaeger são voláteis. Mudanças do nome do projeto mudam
 volumes selecionados; mudanças de senhas no `.env` não reconfiguram banco
 existente. Nenhum alvo Make apaga volumes. Dados reais e segredos permanecem
 fora do Git e imagens; backup continua responsabilidade do proprietário.
+
+## Alternativas
+
+Documentar comandos manuais por serviço aumentaria divergências de setup.
+Deploy remoto exigiria operação externa. Setup que sobrescrevesse `.env`
+colocaria credenciais e acesso a volumes existentes em risco.
+
+## Consequências
+
+README e Compose precisam evoluir juntos. Usuário mantém Docker e segredos,
+aguarda serviços e cuida de backups. Entrega local não demonstra hospedagem
+pública ou disponibilidade contínua; recuperação é detalhada no ADR 027.
 
 ## Validação
 

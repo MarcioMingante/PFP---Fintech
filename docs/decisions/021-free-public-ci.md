@@ -1,5 +1,10 @@
 # 021 — CI público sem cobrança
 
+## Contexto
+
+Verificações precisam ser reproduzíveis localmente e preparadas para CI público,
+respeitando restrição de não assumir cobrança ou publicar repositório.
+
 ## Decisão
 
 GitHub Actions executa frontend, backend e E2E em jobs separados com runners
@@ -26,6 +31,18 @@ Makefile compartilha comandos com CI e executa etapas sequencialmente para
 evitar concorrência sobre `next-env.d.ts`. Instalações são explícitas (`ci-install` e
 `ci-install-e2e`); `ci` valida checkout já preparado. Não executar `ci-web` e
 `ci-e2e` simultaneamente no mesmo checkout.
+
+## Alternativas
+
+CI somente local dispensaria automação remota; permanece caminho válido para
+repositório privado. Runner próprio exigiria manutenção e acesso a uma máquina.
+Runners maiores e serviços pagos não atendem restrição do projeto.
+
+## Consequências
+
+Pipeline preparado não comprova execução remota. Repositório privado ignora
+jobs; operador usa Makefile local. Ausência de artefatos remotos limita inspeção
+pós-execução aos logs. Mudanças em política de gratuidade exigem nova revisão.
 
 ## Limites
 

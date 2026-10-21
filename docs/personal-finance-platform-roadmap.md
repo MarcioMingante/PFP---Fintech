@@ -2044,6 +2044,18 @@ Consequences
 
 Isso deve acontecer continuamente, não só no final.
 
+## Entrega aplicada
+
+- [x] Catálogo dos ADRs com escopo real, documental e opcional explícito.
+- [x] Fundamentos atuais registrados retrospectivamente nos ADRs 001–004.
+- [x] Contexto, decisão, alternativas e consequências em todos os ADRs.
+- [x] Template e processo de evolução/substituição preservando histórico.
+- [x] IDs, cobertura do índice e links locais validados.
+
+Catálogo: [Architecture Decision Records](decisions/README.md).
+Modelo: [Template de ADR](decisions/template.md).
+Fase exclusivamente documental; sem alterações de runtime ou nova implantação.
+
 ---
 
 # Fase 33 — README profissional

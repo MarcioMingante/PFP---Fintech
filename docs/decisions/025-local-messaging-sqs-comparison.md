@@ -18,6 +18,13 @@ Não criar recursos/credenciais AWS, instalar SDK ou substituir transporte.
 SQS não é troca de URI AMQP: queue, visibility timeout, polling, delete e
 redrive exigem mudanças explícitas de aplicação e configuração.
 
+## Alternativas
+
+Trocar RabbitMQ por SQS agora exigiria novo transporte e recursos externos.
+Adicionar emulador local criaria outra integração sem validar serviço AWS real.
+Manter implementação e comparar semântica em documentação atende estudo
+sem alterar garantias ou custos do runtime.
+
 ## Consequências
 
 Demonstração executa em containers descartáveis, sem alterar dados pessoais.

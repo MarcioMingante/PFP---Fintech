@@ -42,6 +42,14 @@ aguarda dois segundos e recria conexão, inclusive na primeira conexão.
 Desligamento cancela operações e libera locks/canais. Logs omitem payload,
 usuário, URI e mensagem de exceção potencialmente sensível.
 
+## Alternativas
+
+Publicar diretamente depois do commit deixaria janela de perda entre banco e broker.
+Executar efeitos sincronamente acoplaria latência e disponibilidade ao request.
+Transação distribuída ampliaria operação; outbox e consumidores idempotentes
+preservam gravação local atômica e aceitam entrega duplicada. SQS permanece
+apenas estudo, detalhado no ADR 025.
+
 ## Consequências
 
 Broker indisponível não impede criação financeira. Projeções têm consistência

@@ -18,6 +18,13 @@ antes do backup. Restauração em banco vazio isolado; dump não inclui RabbitMQ
 Retorno de imagens exige schema compatível; incompatibilidade exige recuperação
 de backup e aceita perda de alterações posteriores. Nenhum downgrade automático.
 
+## Alternativas
+
+Registry simplificaria transporte, mas GHCR foi excluído pelo proprietário.
+Deploy automático no computador pessoal exigiria conectividade do runner e
+operação adicionais. Apenas reconstruir imagens sem versão dificultaria retorno;
+versões locais e save/load preservam snapshots sem publicação.
+
 ## Consequências
 
 Release independe de serviços externos. Operador preserva fontes, imagens, `.env`
